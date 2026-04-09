@@ -2747,6 +2747,7 @@
       font-style: italic;
     }
   </style>
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
@@ -2754,11 +2755,13 @@
 
   <div class="sync-bar">
     <div class="sync-dot" id="sync-dot"></div>
-    <span style="font-size:.8rem;color:var(--ts);">房间：</span>
-    <span class="sync-id" id="room-id-display" style="font-size:1.1rem;font-weight:800;color:var(--pc);margin-right:12px;letter-spacing:1px;">—</span>
-    <span id="sync-status" style="font-size:.85rem;font-weight:700;color:var(--jade);background:rgba(90,158,106,0.1);padding:3px 8px;border-radius:12px;border:1px solid rgba(90,158,106,0.2);">📡 连接中...</span>
+    <span id="sync-status">离线中</span>
+    <span style="font-size:.76rem;">房间：</span><span class="sync-id" id="room-id-display">—</span>
+    <span class="autosave-badge" id="occupancy-badge" style="display:none;margin-left:4px;background:rgba(196,150,58,0.1);color:var(--pc);border-color:var(--border);">👥 1 人</span>
     <div class="sync-btns">
-      <button class="btn bp sm" id="join-room-btn">🔗 切换房间</button>
+      <!-- FIX 4: Join room button stays, leave button stays; no bell/approval -->
+      <button class="btn bp sm" id="join-room-btn">🔗 加入房间</button>
+      <button class="btn bleave sm" id="leave-room-btn" style="display:none;">🚪 退出房间</button>
       <button class="btn bnew sm" id="new-game-btn">🌅 新游戏</button>
       <!-- FIX 5: Auto-save badge replaces save button -->
       <div class="autosave-badge" id="autosave-badge">
@@ -3405,160 +3408,13 @@
 
   <div class="fwov" id="fw-ov" style="display:none;"></div>
 
-  <!-- 引入 Socket.io 客户端脚本（使用 CDN，防止 Vercel 部署报错） -->
-  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-  
   <script>
     // ===================== PEER ID =====================
-    let SOCKET_SERVER_URL = ""; 
-    // 智能适配：如果用户是直接双击打开 index.html 测试，则强行连本地后端，避免卡在连接中
-    if (window.location.protocol === 'file:') { SOCKET_SERVER_URL = "http://127.0.0.1:3000"; }
-    
-    const socket = (typeof io !== 'undefined') ? io(SOCKET_SERVER_URL || undefined) : { on: () => { }, emit: () => { } };
+    let myPeerId = localStorage.getItem('gduck_peer_id');
+    if (!myPeerId) { myPeerId = Math.random().toString(36).slice(2, 10); localStorage.setItem('gduck_peer_id', myPeerId); }
 
-    let myPeerId, myRoomId;
-    try {
-      myPeerId = localStorage.getItem('gduck_peer_id');
-      if (!myPeerId) { 
-        myPeerId = Math.random().toString(36).slice(2, 10); 
-        localStorage.setItem('gduck_peer_id', myPeerId); 
-      }
-
-      myRoomId = localStorage.getItem('gduck_my_room_id');
-      if (!myRoomId) { 
-        myRoomId = Math.floor(100000 + Math.random() * 900000).toString(); 
-        localStorage.setItem('gduck_my_room_id', myRoomId); 
-      }
-    } catch (e) {
-      console.warn('LocalStorage is blocked or unavailable.', e);
-      myPeerId = 'guest-' + Math.random().toString(36).slice(2, 6);
-      myRoomId = '000000';
-    }
-
-    // ===================== SOCKET.IO NETWORK SYNC =====================
-    // 【重要提示：Vercel 部署说明】
-    // Vercel 属于无服务器（Serverless）平台，本身不支持运行持久化的 Socket.io (server.js)。
-    // 如果你部署在 Vercel 上，请将 server.js 单独部署到支持 WebSockets 的平台（如 Render, Railway 等），
-    // 然后将下方的 SOCKET_SERVER_URL 替换为你部署好的后端地址。
-    // 如果你在本地运行（通过 node server.js），保留为空即可，会自动使用当前地址。
-    const SOCKET_SERVER_URL = ""; 
-    const socket = (typeof io !== 'undefined') ? io(SOCKET_SERVER_URL || undefined) : { on: () => { }, emit: () => { } };
-
-    function getRoomKey(roomId) { return 'gduck-' + roomId; }
-
-    // 房间历史记录逻辑
-    function saveRoomHistory(roomId) {
-      try {
-        let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
-        hist = hist.filter(id => id !== roomId);
-        hist.unshift(roomId);
-        hist = hist.slice(0, 8);
-        localStorage.setItem('gduck_room_history', JSON.stringify(hist));
-        renderRoomHistory();
-      } catch (e) {}
-    }
-
-    function renderRoomHistory() {
-      const container = d('join-history-list');
-      if (!container) return;
-      try {
-        let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
-        container.innerHTML = '';
-        if (hist.length === 0) {
-          container.innerHTML = '<div class="rh-empty">暂无历史记录</div>';
-          return;
-        }
-        hist.forEach(id => {
-          let btn = document.createElement('button');
-          btn.className = 'rh-btn';
-          btn.textContent = '🏠 ' + id;
-          btn.onclick = () => { d('join-room-input').value = id; d('join-confirm').click(); };
-          container.appendChild(btn);
-        });
-      } catch (e) {}
-    }
-
-    function broadcastState() {
-      // 现在的逻辑：任何人只要在房间里且做了修改，就向全房间更新
-      if (!GS.roomId) return;
-      const state = exportState();
-      socket.emit('broadcast-state', { roomId: GS.roomId, state: state });
-      d('sync-dot').className = 'sync-dot online';
-    }
-
-    // Socket Event Listeners
-    socket.on('state-update', (state) => {
-      applyRemoteState(state);
-    });
-
-    socket.on('occupancy-update', (count) => {
-      const statusEl = d('sync-status');
-      if (statusEl) {
-        statusEl.innerHTML = `👥 房间同频：${count} 人`;
-      }
-    });
-
-    function initMyRoom() {
-      let r = localStorage.getItem('gduck_current_room') || myRoomId;
-      GS.roomId = r;
-      localStorage.setItem('gduck_current_room', r);
-      
-      d('room-id-display').textContent = r;
-      d('my-room-code-display').textContent = r;
-      d('sync-dot').className = 'sync-dot online';
-
-      socket.emit('join-room', GS.roomId);
-      saveRoomHistory(r);
-    }
-
-    // 监听本地操作触发状态同步（不再发送 UI 模拟点击）
-    document.addEventListener('click', (e) => {
-      if (!GS.roomId) return;
-      
-      const target = e.target.closest('button, .sc2, .cpc, .anc, .sab-punish-opt, .tbtn, .pc2, .rh-btn');
-      if (!target) return;
-
-      const bypassIds = ['join-confirm', 'leave-confirm', 'join-room-btn', 'leave-room-btn', 'music-btn', 'bgm-stop-btn', 'show-neutral', 'hide-neutral', 'join-cancel', 'leave-cancel', 'role-cancel'];
-      if (target.classList.contains('tbtn') && !target.dataset.tab) return; // 忽略无效页签
-      if (bypassIds.includes(target.id) || (target.id && target.id.includes('cancel'))) return;
-
-      // 每次本地重要操作后，延迟一小会广播一次全量状态
-      setTimeout(onStateChanged, 100);
-    }, true);
-
-    document.addEventListener('input', (e) => {
-      if (!e.target.id || !GS.roomId) return;
-      const bypassIds = ['join-room-input', 'bgm-vol'];
-      if (bypassIds.includes(e.target.id)) return;
-
-      // 输入框内容同步也触发一次状态持久化
-      setTimeout(onStateChanged, 300);
-    }, true);
-
-
-    function directJoin(targetRoomId) {
-      if (targetRoomId === GS.roomId) { alert('你已经在此房间中！'); return; }
-
-      GS.roomId = targetRoomId;
-      localStorage.setItem('gduck_current_room', targetRoomId);
-      
-      d('sync-status').textContent = '📡 正在加入...';
-      d('sync-dot').className = 'sync-dot online';
-      d('room-id-display').textContent = targetRoomId;
-      
-      socket.emit('join-room', GS.roomId);
-      saveRoomHistory(targetRoomId);
-      lg('system', '✅', `已连接云端房间 ${targetRoomId}`);
-    }
-
-    function onStateChanged() {
-      triggerAutoSave();
-      if (GS.roomId) broadcastState();
-    }
-
-    // ===================== CONSTANTS =====================
-    const RN = { goose: '普信鹅 🪿', detective: '法师鹅 🔍', sheriff: '护法鹅 👮', duck: '魔罗鸭 🦆', pigeon: '轮回鸽 🕊️', dodo: '痴迷鸽 🦤' };
-    const GR = ['goose', 'detective', 'sheriff'];
+    let myRoomId = localStorage.getItem('gduck_my_room_id');
+    if (!myRoomId) { myRoomId = Math.floor(100000 + Math.random() * 900000).toString(); localStorage.setItem('gduck_my_room_id', myRoomId); }
 
     // ===================== GAME STATE =====================
     const DEFAULT_TEAMS = [
@@ -3595,12 +3451,192 @@
       const dot = d('autosave-dot');
       if (dot) dot.classList.add('saving');
       autoSaveTimeout = setTimeout(() => {
-        if (GS.roomId) broadcastState();
+        saveState();
+        if (GS.isHost && GS.roomId) broadcastState();
         if (dot) dot.classList.remove('saving');
         const lbl = d('autosave-label');
-        if (lbl) { lbl.textContent = '已同步云端 ' + gt(); setTimeout(() => { lbl.textContent = '实时同步'; }, 3000); }
-      }, 400);
+        if (lbl) { lbl.textContent = '已保存 ' + gt(); setTimeout(() => { lbl.textContent = '自动保存'; }, 3000); }
+      }, 800);
     }
+    // Periodic auto-save every 20s
+    setInterval(() => { saveState(); }, 20000);
+    setInterval(() => { if (GS.isHost) broadcastState(); }, 500);
+
+    // ===================== SOCKET.IO NETWORK SYNC =====================
+    const socket = io();
+
+    // Join history logic
+    function saveRoomHistory(roomId) {
+      let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
+      hist = hist.filter(id => id !== roomId);
+      hist.unshift(roomId);
+      hist = hist.slice(0, 8);
+      localStorage.setItem('gduck_room_history', JSON.stringify(hist));
+      renderRoomHistory();
+    }
+
+    function renderRoomHistory() {
+      const container = d('join-history-list');
+      if (!container) return;
+      let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
+      container.innerHTML = '';
+      if (hist.length === 0) {
+        container.innerHTML = '<div class="rh-empty">暂无历史记录</div>';
+        return;
+      }
+      hist.forEach(id => {
+        let btn = document.createElement('button');
+        btn.className = 'rh-btn';
+        btn.textContent = '🏠 ' + id;
+        btn.onclick = () => { d('join-room-input').value = id; d('join-confirm').click(); };
+        container.appendChild(btn);
+      });
+    }
+    // Render once at start
+    renderRoomHistory();
+
+    function broadcastState() {
+      if (!GS.isHost || !GS.roomId) return;
+      const state = exportState();
+      socket.emit('updateState', { roomId: GS.roomId, state: state });
+      d('sync-dot').className = 'sync-dot online';
+    }
+
+    function initMyRoom() {
+      GS.roomId = myRoomId;
+      GS.joinedRoom = null;
+      d('room-id-display').textContent = myRoomId;
+      d('my-room-code-display').textContent = myRoomId;
+      d('sync-status').textContent = '连接云端中...';
+      d('sync-dot').className = 'sync-dot syncing';
+      d('leave-room-btn').style.display = 'none';
+      
+      socket.emit('joinRoom', myRoomId);
+    }
+
+    socket.on('roomJoined', (data) => {
+      const { roomId, isHost, state } = data;
+      GS.roomId = roomId;
+      GS.isHost = isHost;
+      d('room-id-display').textContent = roomId;
+      d('sync-dot').className = 'sync-dot online';
+      d('occupancy-badge').style.display = 'inline-flex';
+
+      if (isHost) {
+        d('sync-status').textContent = '云端房间 · 房主';
+        if (state) {
+            applyRemoteState(state);
+        } else {
+            // Immediately send current local state if creating new server room
+            broadcastState();
+        }
+      } else {
+        d('sync-status').textContent = '已连接到房间';
+        if (state) applyRemoteState(state);
+      }
+    });
+
+    socket.on('occupancyUpdate', (count) => {
+        si('occupancy-badge', `👥 ${count}`);
+    });
+
+    socket.on('hostAssigned', () => {
+        GS.isHost = true;
+        d('sync-status').textContent = '云端房间 · 房主';
+        lg('system', '👑', '你已自动成为当前房间的房主');
+        broadcastState();
+    });
+
+    socket.on('stateUpdate', (state) => {
+        applyRemoteState(state);
+    });
+
+    socket.on('simClick', (data) => {
+        let el = null;
+        if (data.id) el = document.getElementById(data.id);
+        else if (data.dataset) {
+            const elems = document.getElementsByClassName(data.className.split(' ')[0]);
+            for (let e of elems) {
+                let match = true;
+                for (let k in data.dataset) if (e.dataset[k] !== data.dataset[k]) match = false;
+                if (match) { el = e; break; }
+            }
+        }
+        if (el) { el.click(); }
+    });
+
+    socket.on('simInput', (data) => {
+        let el = document.getElementById(data.id);
+        if (el) { el.value = data.value; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('blur')); }
+    });
+
+    // Client UI Interception
+    document.addEventListener('click', (e) => {
+      if (GS.isHost) return;
+      // Let structural native clicks through if they don't modify game state
+      const target = e.target.closest('button, .sc2, .cpc, .anc, .sab-punish-opt, .tbtn, .pc2, .rh-btn');
+      if (!target) return;
+
+      const bypassIds = ['join-confirm', 'leave-confirm', 'join-room-btn', 'leave-room-btn', 'music-btn', 'bgm-stop-btn', 'show-neutral', 'hide-neutral', 'join-cancel', 'leave-cancel', 'role-cancel'];
+      if (target.classList.contains('tbtn') || target.classList.contains('rh-btn') || bypassIds.includes(target.id) || (target.id && target.id.includes('cancel'))) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      let identify = target.id;
+      let clickData;
+      if (identify) clickData = { id: identify };
+      else clickData = { id: null, dataset: { ...target.dataset }, className: target.className };
+      
+      socket.emit('simClick', { roomId: GS.roomId, clickData: clickData });
+    }, true);
+
+    document.addEventListener('input', (e) => {
+      if (GS.isHost || !e.target.id) return;
+      const bypassIds = ['join-room-input', 'bgm-vol'];
+      if (bypassIds.includes(e.target.id)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      socket.emit('simInput', { roomId: GS.roomId, inputData: { id: e.target.id, value: e.target.value } });
+    }, true);
+
+
+    function directJoin(targetRoomId) {
+      if (targetRoomId === myRoomId) { alert('不能加入自己的本地代码！'); return; }
+      saveState();
+
+      GS.joinedRoom = targetRoomId;
+      GS.isHost = false;
+      GS.roomId = targetRoomId;
+      d('sync-status').textContent = '连接云端中...';
+      d('sync-dot').className = 'sync-dot syncing';
+      
+      d('leave-room-btn').style.display = 'inline-flex';
+      sfxJoinApproved();
+      saveRoomHistory(targetRoomId);
+      lg('system', '✅', `正在加入房间 ${targetRoomId}`);
+
+      socket.emit('joinRoom', targetRoomId);
+    }
+
+    function leaveRoom() {
+      // Revert to local room
+      d('occupancy-badge').style.display = 'none';
+      d('leave-room-btn').style.display = 'none';
+      initMyRoom();
+      saveState();
+      lg('system', '🚪', '已退出他人房间，回到本地模式');
+    }
+
+    function onStateChanged() {
+      triggerAutoSave();
+      if (GS.isHost && GS.roomId) broadcastState();
+    }
+
+    // ===================== CONSTANTS =====================
+    const RN = { goose: '普信鹅 🪿', detective: '法师鹅 🔍', sheriff: '护法鹅 👮', duck: '魔罗鸭 🦆', pigeon: '轮回鸽 🕊️', dodo: '痴迷鸽 🦤' };
+    const GR = ['goose', 'detective', 'sheriff'];
 
     const MUSIC_STYLES = [
       { id: 'teahouse', name: '茶馆雅座', icon: '🍵', desc: '琵琶·悠然' },
@@ -3798,7 +3834,20 @@
       if (log.children.length > 120) log.removeChild(log.lastChild);
     }
 
-    // 删除旧的 saveState，全部走云端保存
+    // ===================== SAVE/LOAD =====================
+    function saveState() {
+      try {
+        const state = {
+          teams: GS.teams,
+          totalTasks: GS.totalTasks, taskTarget: GS.taskTarget, meetRound: GS.meetRound, sabSuccessCount: GS.sabSuccessCount,
+          players: GS.players.map(p => ({ id: p.id, name: p.name, teamIdx: p.teamIdx, role: p.element.dataset.role, tasks: p.tasks, votes: p.votes, dead: p.element.classList.contains('eliminated'), resurrected: p.element.classList.contains('resurrected') })),
+          roleCounts: { goose: parseInt(d('cnt-goose').value) || 0, det: parseInt(d('cnt-det').value) || 0, sher: parseInt(d('cnt-sher').value) || 0, duck: parseInt(d('cnt-duck').value) || 0, pig: parseInt(d('cnt-pig').value) || 0, dodo: parseInt(d('cnt-dodo').value) || 0 },
+          currentBGM: GS.currentBGM, bgVolume: GS.bgVolume, muted: GS.muted, bgmStopped: GS.bgmStopped,
+        };
+        localStorage.setItem('gduck_save', JSON.stringify(state));
+      } catch (e) { }
+    }
+
     function exportState() {
       return {
         teams: GS.teams,
@@ -3815,10 +3864,16 @@
         meetingActive: GS.meetingActive,
         votingLocked: GS.votingLocked,
         pkMode: GS.pkMode,
+        tbnActive: Array.from(document.querySelectorAll('.tbtn')).findIndex(b => b.classList.contains('active')),
+        modals: Array.from(document.querySelectorAll('.mo')).map(m => ({ id: m.id, className: m.className })),
+        resultModHTML: d('res-mod-inner').innerHTML,
+        sabResultHTML: d('mod-sab-result').querySelector('.mod').innerHTML,
+        pkEndHTML: d('mod-pk-end').innerHTML,
         sabTimerText: d('sab-timer').textContent,
         discClkText: d('disc-clk').textContent,
         voteBoardHTML: d('vote-rb').innerHTML,
-        voteRbShow: d('vote-rb').classList.contains('show')
+        voteRbShow: d('vote-rb').classList.contains('show'),
+        sabConfHTML: d('mod-sab-punish-confirm').innerHTML
       };
     }
 
@@ -3857,15 +3912,69 @@
         try { setVotingLocked(GS.votingLocked); } catch (e) { }
         GS.pkMode = !!state.pkMode;
 
-        // 允许用户独立操作，去除了弹窗、选填项和无关UI的强制同步
+        // UI elements HTML sync natively
         d('vote-rb').innerHTML = state.voteBoardHTML || '';
         if (state.voteRbShow) d('vote-rb').classList.add('show'); else d('vote-rb').classList.remove('show');
-        
+        d('res-mod-inner').innerHTML = state.resultModHTML || '';
+        d('mod-sab-result').querySelector('.mod').innerHTML = state.sabResultHTML || '';
+        d('mod-pk-end').innerHTML = state.pkEndHTML || '';
+        d('mod-sab-punish-confirm').innerHTML = state.sabConfHTML || '';
+
+        // Modals
+        if (state.modals) {
+          state.modals.forEach(sm => {
+            const m = d(sm.id);
+            if (m && m.className !== sm.className) m.className = sm.className;
+          });
+        }
+
+        // Tab Sync
+        if (state.tbnActive !== undefined && state.tbnActive > -1) {
+          const tabBtns = Array.from(document.querySelectorAll('.tbtn'));
+          if (tabBtns[state.tbnActive] && !tabBtns[state.tbnActive].classList.contains('active')) {
+            activateTab(tabBtns[state.tbnActive].dataset.tab);
+          }
+        }
+
         updStats();
         try { updJailBoard(); } catch (e) { }
         d('sync-dot').className = 'sync-dot online';
-        if (GS.players.length > 0) { d('step2-btn').disabled = false; d('step3-btn').disabled = false; }
       }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem('gduck_save');
+        if (!raw) return false;
+        const state = JSON.parse(raw);
+        if (state.teams && Array.isArray(state.teams)) GS.teams = state.teams;
+        buildTeamConfigUI();
+        GS.taskTarget = state.taskTarget || 80; d('tgt-input').value = GS.taskTarget; si('tgt-label', GS.taskTarget);
+        if (state.roleCounts) { const rc = state.roleCounts;['goose', 'det', 'sher', 'duck', 'pig', 'dodo'].forEach(k => { const el = d('cnt-' + k); if (el) el.value = rc[k] || 0; }); }
+        if (state.currentBGM) GS.currentBGM = state.currentBGM;
+        if (typeof state.bgVolume === 'number') { GS.bgVolume = state.bgVolume; d('bgm-vol').value = Math.round(state.bgVolume * 100); d('bgm-vol-label').textContent = Math.round(state.bgVolume * 100) + '%'; }
+        if (typeof state.muted === 'boolean') { GS.muted = state.muted; d('music-btn').textContent = GS.muted ? '🔇' : '🎵'; }
+        if (typeof state.bgmStopped === 'boolean') GS.bgmStopped = state.bgmStopped;
+        const totalPlayers = GS.teams.reduce((a, t) => a + (t.count || 0), 0);
+        if (totalPlayers > 0) {
+          genPlayers(true);
+          if (state.players) {
+            state.players.forEach(sp => {
+              const p = GS.players.find(x => x.id === sp.id); if (!p) return;
+              p.tasks = sp.tasks; p.element.querySelector('.tc').textContent = sp.tasks;
+              p.votes = sp.votes || 0;
+              if (sp.role) setRole(p.element, sp.role);
+              if (sp.dead) elimP(p.element, true);
+              else if (sp.resurrected) resP(p.element, true);
+            });
+            GS.totalTasks = state.totalTasks || 0;
+          }
+        }
+        GS.meetRound = state.meetRound || 1; d('m-round-input').value = GS.meetRound;
+        GS.sabSuccessCount = state.sabSuccessCount || 0;
+        updStats(); updTT(); refCands(); refPickers();
+        return true;
+      } catch (e) { return false; }
     }
 
     // ===================== TEAM CONFIG =====================
@@ -4673,6 +4782,9 @@
       hideMod('mod-join');
       directJoin(id);
     });
+    d('leave-room-btn').addEventListener('click', () => showMod('mod-leave-room'));
+    d('leave-cancel').addEventListener('click', () => hideMod('mod-leave-room'));
+    d('leave-confirm').addEventListener('click', () => { hideMod('mod-leave-room'); leaveRoom(); });
 
     // ===================== ROLE MODAL =====================
     document.querySelectorAll('.rsb').forEach(btn => btn.addEventListener('click', () => {
@@ -4754,13 +4866,14 @@
       d('step2-btn').disabled = true;
       d('step3-btn').disabled = true;
       initMyRoom();
-      d('my-room-code-display').textContent = GS.roomId;
-      // 强制去除了原单机加载模式，由于使用了云端存档，初始化后只需等待服务器推送 state-update
+      d('my-room-code-display').textContent = myRoomId;
+      loadState();
+      if (GS.players.length > 0) { d('step2-btn').disabled = false; d('step3-btn').disabled = false; }
       if (GS.bgmStopped) d('bgm-stop-btn').textContent = '▶ 开启音乐';
       setVotingLocked(true);
       const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
       document.body.addEventListener('click', once);
-      lg('system', '🏮', `控制台启动 · 已连接云端房间：${GS.roomId}`);
+      lg('system', '🏮', `控制台启动 · 我的房间号：${myRoomId}`);
     });
   </script>
 </body>

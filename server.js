@@ -1,119 +1,139 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
-// 存储各个房间的实时状态和最后更新时间
-const roomStates = new Map();
-// 存储每个房间的在线人数
-const roomOccupancy = new Map();
-const DB_FILE = path.join(__dirname, 'roomStates.json');
+// Serve static files from current directory
+app.use(express.static(path.join(__dirname)));
 
-const fs = require('fs');
+const DATA_FILE = path.join(__dirname, 'rooms_save.json');
 
-// 启动时读取云端历史记录
+// In-memory format: { [roomId]: { state: Object, hostSocketId: String, users: Set } }
+let rooms = {};
+
+// Load previous state
 try {
-    if (fs.existsSync(DB_FILE)) {
-        const data = fs.readFileSync(DB_FILE, 'utf8');
-        const parsed = JSON.parse(data);
-        for (const [k, v] of Object.entries(parsed)) {
-            roomStates.set(k, v);
+    if (fs.existsSync(DATA_FILE)) {
+        const raw = fs.readFileSync(DATA_FILE, 'utf8');
+        const parsed = JSON.parse(raw);
+        for (let roomId in parsed) {
+            rooms[roomId] = {
+                state: parsed[roomId].state,
+                hostSocketId: null,
+                users: new Set()
+            };
         }
-        console.log(`成功加载 ${roomStates.size} 个云端房间记录`);
+        console.log(`Loaded ${Object.keys(rooms).length} rooms from cloud storage.`);
     }
 } catch (e) {
-    console.warn('读取历史记录失败或无记录', e);
+    console.error('Failed to load DB:', e);
 }
 
-// 保存到云端文件
 function saveDB() {
-    const obj = {};
-    for (const [k, v] of roomStates.entries()) {
-        obj[k] = v;
+    try {
+        const saveObj = {};
+        for (let roomId in rooms) {
+            if (rooms[roomId].state) {
+                saveObj[roomId] = { state: rooms[roomId].state };
+            }
+        }
+        fs.writeFileSync(DATA_FILE, JSON.stringify(saveObj, null, 2));
+    } catch (e) {
+        console.error('Failed to save DB:', e);
     }
-    fs.writeFile(DB_FILE, JSON.stringify(obj), (err) => {
-        if (err) console.error('保存云端数据报错', err);
-    });
 }
-
-app.use(express.static(__dirname));
 
 io.on('connection', (socket) => {
     let currentRoom = null;
-    console.log('用户已连接:', socket.id);
 
-    // 加入房间
-    socket.on('join-room', (roomId) => {
+    socket.on('joinRoom', (roomId) => {
         if (currentRoom) {
             socket.leave(currentRoom);
-            updateOccupancy(currentRoom, -1);
+            rooms[currentRoom]?.users.delete(socket.id);
         }
-        
-        currentRoom = roomId;
+
         socket.join(roomId);
-        updateOccupancy(roomId, 1);
+        currentRoom = roomId;
+
+        if (!rooms[roomId]) {
+            rooms[roomId] = { state: null, hostSocketId: socket.id, users: new Set() };
+        }
+        rooms[roomId].users.add(socket.id);
+
+        let isHost = false;
+        // If there's no host, or the recorded host is no longer connected to this room
+        if (!rooms[roomId].hostSocketId || !rooms[roomId].users.has(rooms[roomId].hostSocketId)) {
+            rooms[roomId].hostSocketId = socket.id;
+            isHost = true;
+        } else if (rooms[roomId].hostSocketId === socket.id) {
+            isHost = true;
+        }
+
+        // Send confirmation to the joined user
+        socket.emit('roomJoined', {
+            roomId: roomId,
+            isHost: isHost,
+            state: rooms[roomId].state
+        });
+
+        // Broadcast occupancy update to EVERYONE in the room
+        io.to(roomId).emit('occupancyUpdate', rooms[roomId].users.size);
+    });
+
+    socket.on('updateState', (stateObj) => {
+        if (!currentRoom || !rooms[currentRoom]) return;
         
-        console.log(`用户 ${socket.id} 加入了房间: ${roomId}`);
+        // Update server cache
+        rooms[currentRoom].state = stateObj;
+        saveDB(); // "Auto save history in the cloud"
         
-        // 如果房间已有状态，立即发送给新加入者（实现实时接管）
-        if (roomStates.has(roomId)) {
-            socket.emit('state-update', roomStates.get(roomId));
+        // Broadcast state to all other clients in the room
+        socket.to(currentRoom).emit('stateUpdate', stateObj);
+    });
+
+    socket.on('simClick', (clickData) => {
+        if (!currentRoom || !rooms[currentRoom]) return;
+        const hostId = rooms[currentRoom].hostSocketId;
+        if (hostId) {
+            io.to(hostId).emit('simClick', clickData);
         }
     });
 
-    // 接收全量状态更新（通常由修改者触发）
-    socket.on('broadcast-state', (data) => {
-        const { roomId, state } = data;
-        roomStates.set(roomId, state);
-        // 转发给房间内除发送者以外的所有人
-        socket.to(roomId).emit('state-update', state);
-        // 持久化云端
-        saveDB();
-    });
-
-    // 接收并转发细粒度动作（点击、输入等）
-    socket.on('sync-action', (data) => {
-        const { roomId, action } = data;
-        // 动作转发不仅能实现同步，还能保持两端 UI 交互一致
-        socket.to(roomId).emit('peer-action', action);
+    socket.on('simInput', (inputData) => {
+        if (!currentRoom || !rooms[currentRoom]) return;
+        const hostId = rooms[currentRoom].hostSocketId;
+        if (hostId) {
+            io.to(hostId).emit('simInput', inputData);
+        }
     });
 
     socket.on('disconnect', () => {
-        if (currentRoom) {
-            updateOccupancy(currentRoom, -1);
-        }
-        console.log('用户已断开:', socket.id);
-    });
+        if (currentRoom && rooms[currentRoom]) {
+            rooms[currentRoom].users.delete(socket.id);
+            
+            // Broadcast new occupancy
+            io.to(currentRoom).emit('occupancyUpdate', rooms[currentRoom].users.size);
 
-    function updateOccupancy(roomId, delta) {
-        let count = roomOccupancy.get(roomId) || 0;
-        count += delta;
-        if (count <= 0) {
-            roomOccupancy.delete(roomId);
-            // 可选：如果房间没人了，可以决定是否保留状态（这里保留，以便重连）
-        } else {
-            roomOccupancy.set(roomId, count);
+            // Reassign host if the leaving user was the host
+            if (rooms[currentRoom].hostSocketId === socket.id) {
+                rooms[currentRoom].hostSocketId = null;
+                // Assign new host if there are users left
+                if (rooms[currentRoom].users.size > 0) {
+                    const nextHost = Array.from(rooms[currentRoom].users)[0];
+                    rooms[currentRoom].hostSocketId = nextHost;
+                    io.to(nextHost).emit('hostAssigned');
+                }
+            }
         }
-        io.to(roomId).emit('occupancy-update', count);
-    }
+    });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`
-    =============================================
-    🚀 鹅鸭杀角色管理【全网实时同步版】已启动！
-    本地访问: http://localhost:${PORT}
-    局域网访问: http://<你的局域网IP>:${PORT}
-    =============================================
-    `);
+server.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
 });
