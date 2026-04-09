@@ -3497,18 +3497,39 @@
     let socketConnected = false;
     let socketConnecting = false;
 
+    // Wait for window load
+    window.addEventListener('load', () => {
+      setTimeout(initSocket, 500);
+    });
+
     function initSocket() {
+
       if (socket) return;
+      socketConnecting = true;
+
+      // Timeout to avoid getting stuck
+      const connTimeout = setTimeout(() => {
+        if (!socketConnected) {
+          console.warn('[Socket.io] 连接超时，切换到本地模式');
+          d('sync-status').textContent = '本地模式 (离线)';
+          d('sync-dot').className = 'sync-dot offline';
+          socketConnecting = false;
+        }
+      }, 3500);
 
       socket = io({
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
-        reconnectionAttempts: 10
+        reconnectionAttempts: 5,
+        transports: ['polling', 'websocket'] // 优先尝试轮询，Vercel 兼容性更好
       });
 
       socket.on('connect', () => {
+        clearTimeout(connTimeout);
         socketConnected = true;
+        socketConnecting = false;
+
         console.log('[Socket.io] 已连接到服务器');
         d('sync-dot').className = 'sync-dot online';
         if (GS.roomId) {
