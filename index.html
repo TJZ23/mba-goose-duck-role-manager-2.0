@@ -3430,40 +3430,45 @@
 
     // ===================== SOCKET.IO NETWORK SYNC =====================
     const socket = (typeof io !== 'undefined') ? io() : { on: () => { }, emit: () => { } };
+    let isRemoteProcessing = false; // 同步状态锁
 
     function getRoomKey(roomId) { return 'gduck-' + roomId; }
 
-    // Join history logic
+    // 房间历史记录逻辑
     function saveRoomHistory(roomId) {
-      let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
-      hist = hist.filter(id => id !== roomId);
-      hist.unshift(roomId);
-      hist = hist.slice(0, 8);
-      localStorage.setItem('gduck_room_history', JSON.stringify(hist));
-      renderRoomHistory();
+      try {
+        let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
+        hist = hist.filter(id => id !== roomId);
+        hist.unshift(roomId);
+        hist = hist.slice(0, 8);
+        localStorage.setItem('gduck_room_history', JSON.stringify(hist));
+        renderRoomHistory();
+      } catch (e) {}
     }
 
     function renderRoomHistory() {
       const container = d('join-history-list');
       if (!container) return;
-      let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
-      container.innerHTML = '';
-      if (hist.length === 0) {
-        container.innerHTML = '<div class="rh-empty">暂无历史记录</div>';
-        return;
-      }
-      hist.forEach(id => {
-        let btn = document.createElement('button');
-        btn.className = 'rh-btn';
-        btn.textContent = '🏠 ' + id;
-        btn.onclick = () => { d('join-room-input').value = id; d('join-confirm').click(); };
-        container.appendChild(btn);
-      });
+      try {
+        let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
+        container.innerHTML = '';
+        if (hist.length === 0) {
+          container.innerHTML = '<div class="rh-empty">暂无历史记录</div>';
+          return;
+        }
+        hist.forEach(id => {
+          let btn = document.createElement('button');
+          btn.className = 'rh-btn';
+          btn.textContent = '🏠 ' + id;
+          btn.onclick = () => { d('join-room-input').value = id; d('join-confirm').click(); };
+          container.appendChild(btn);
+        });
+      } catch (e) {}
     }
-    renderRoomHistory();
 
     function broadcastState() {
-      if (!GS.isHost || !GS.roomId) return;
+      // 现在的逻辑：任何人只要在房间里且做了修改，就向全房间更新
+      if (!GS.roomId) return;
       const state = exportState();
       socket.emit('broadcast-state', { roomId: GS.roomId, state: state });
       d('sync-dot').className = 'sync-dot online';
@@ -3471,36 +3476,57 @@
 
     // Socket Event Listeners
     socket.on('state-update', (state) => {
-      if (GS.isHost) return; // Host ignores state updates from server (it is the source)
+      // 如果本地正在处理自己的点击，暂时忽略全量状态，防止 UI 抖动
+      if (isRemoteProcessing) return;
       applyRemoteState(state);
     });
 
     socket.on('peer-action', (data) => {
-      // For Host: execute the action and then broadcast the new state
-      // For Client: execute the action locally (optional, but helps responsiveness)
+      // 核心：处理来自其他人的独立操作
       handleRemoteAction(data);
     });
 
+    socket.on('occupancy-update', (count) => {
+      const statusEl = d('sync-status');
+      if (statusEl) {
+        statusEl.innerHTML = `当前在线：<strong style="color:var(--jade);">${count}</strong> 人`;
+      }
+    });
+
     function handleRemoteAction(data) {
-      if (data.type === 'SIM_CLICK') {
-        let el = null;
-        if (data.id) el = document.getElementById(data.id);
-        else if (data.dataset) {
-          const elems = document.getElementsByClassName(data.className.split(' ')[0]);
-          for (let e of elems) {
-            let match = true;
-            for (let k in data.dataset) if (e.dataset[k] !== data.dataset[k]) match = false;
-            if (match) { el = e; break; }
+      if (isRemoteProcessing) return;
+      isRemoteProcessing = true; // 锁定，防止点击事件被重复发送
+
+      try {
+        if (data.type === 'SIM_CLICK') {
+          let el = null;
+          if (data.id) el = document.getElementById(data.id);
+          else if (data.dataset) {
+            // 通过数据集找到对应的按钮（如角色选择、页签切换）
+            const elems = document.getElementsByClassName(data.className.split(' ')[0]);
+            for (let e of elems) {
+              let match = true;
+              for (let k in data.dataset) if (e.dataset[k] !== data.dataset[k]) match = false;
+              if (match) { el = e; break; }
+            }
+          }
+          if (el) { 
+            el.click(); 
           }
         }
-        if (el) { 
-          // Prevent infinite loops: only trigger click if we are host or it's a "local-safe" action
-          el.click(); 
+        if (data.type === 'SIM_INPUT') {
+          let el = document.getElementById(data.id);
+          if (el) { 
+            el.value = data.value; 
+            el.dispatchEvent(new Event('input', { bubbles: true })); 
+            el.dispatchEvent(new Event('change', { bubbles: true })); 
+            el.dispatchEvent(new Event('blur', { bubbles: true })); 
+          }
         }
-      }
-      if (data.type === 'SIM_INPUT') {
-        let el = document.getElementById(data.id);
-        if (el) { el.value = data.value; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('blur')); }
+      } catch (err) {
+        console.warn('同步操作执行失败:', err);
+      } finally {
+        isRemoteProcessing = false; // 解锁
       }
     }
 
@@ -3510,26 +3536,25 @@
       GS.joinedRoom = null;
       d('room-id-display').textContent = myRoomId;
       d('my-room-code-display').textContent = myRoomId;
-      d('sync-status').textContent = '我的房间 · 房主';
       d('sync-dot').className = 'sync-dot online';
       d('leave-room-btn').style.display = 'none';
 
       socket.emit('join-room', GS.roomId);
     }
 
-    // Interaction Interception
-    let isRemoteProcessing = false;
+    // 事件拦截与同步发送
     document.addEventListener('click', (e) => {
-      // If we are currently processing a remote click, don't emit it back
-      if (isRemoteProcessing) return;
+      // 如果是处理远程同步导致的点击，不重复发送
+      if (isRemoteProcessing || !GS.roomId) return;
       
       const target = e.target.closest('button, .sc2, .cpc, .anc, .sab-punish-opt, .tbtn, .pc2, .rh-btn');
       if (!target) return;
 
       const bypassIds = ['join-confirm', 'leave-confirm', 'join-room-btn', 'leave-room-btn', 'music-btn', 'bgm-stop-btn', 'show-neutral', 'hide-neutral', 'join-cancel', 'leave-cancel', 'role-cancel'];
-      if (target.classList.contains('tbtn') || target.classList.contains('rh-btn') || bypassIds.includes(target.id) || (target.id && target.id.includes('cancel'))) return;
+      if (target.classList.contains('tbtn') && !target.dataset.tab) return; // 忽略无效页签
+      if (bypassIds.includes(target.id) || (target.id && target.id.includes('cancel'))) return;
 
-      // Sync the action
+      // 发送动作给房间内其他人
       let action = {
         type: 'SIM_CLICK',
         id: target.id || null,
@@ -3538,10 +3563,13 @@
       };
       
       socket.emit('sync-action', { roomId: GS.roomId, action: action });
+      
+      // 每次本地重要操作后，延迟一小会广播一次全量状态，确保新加入者始终同步
+      setTimeout(onStateChanged, 100);
     }, true);
 
     document.addEventListener('input', (e) => {
-      if (!e.target.id) return;
+      if (isRemoteProcessing || !e.target.id || !GS.roomId) return;
       const bypassIds = ['join-room-input', 'bgm-vol'];
       if (bypassIds.includes(e.target.id)) return;
 
@@ -3551,6 +3579,9 @@
         value: e.target.value
       };
       socket.emit('sync-action', { roomId: GS.roomId, action: action });
+      
+      // 输入框内容同步也触发一次状态持久化
+      setTimeout(onStateChanged, 300);
     }, true);
 
 
