@@ -3869,7 +3869,6 @@
         meetingActive: GS.meetingActive,
         votingLocked: GS.votingLocked,
         pkMode: GS.pkMode,
-        tbnActive: Array.from(document.querySelectorAll('.tbtn')).findIndex(b => b.classList.contains('active')),
         modals: Array.from(document.querySelectorAll('.mo')).map(m => ({ id: m.id, className: m.className })),
         resultModHTML: d('res-mod-inner').innerHTML,
         sabResultHTML: d('mod-sab-result').querySelector('.mod').innerHTML,
@@ -3931,14 +3930,6 @@
             const m = d(sm.id);
             if (m && m.className !== sm.className) m.className = sm.className;
           });
-        }
-
-        // Tab Sync
-        if (state.tbnActive !== undefined && state.tbnActive > -1) {
-          const tabBtns = Array.from(document.querySelectorAll('.tbtn'));
-          if (tabBtns[state.tbnActive] && !tabBtns[state.tbnActive].classList.contains('active')) {
-            activateTab(tabBtns[state.tbnActive].dataset.tab);
-          }
         }
 
         updStats();
