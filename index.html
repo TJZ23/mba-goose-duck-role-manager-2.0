@@ -3506,7 +3506,6 @@
       d('room-id-display').textContent = r;
       d('my-room-code-display').textContent = r;
       d('sync-dot').className = 'sync-dot online';
-      d('leave-room-btn').style.display = 'none';
 
       socket.emit('join-room', GS.roomId);
       saveRoomHistory(r);
