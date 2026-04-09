@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
-    "build": "echo 'No build step required'"
+    "dev": "node --watch server.js"
   },
   "keywords": [
     "goose-duck",
