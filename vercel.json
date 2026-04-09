@@ -1,20 +1,9 @@
 {
   "version": 2,
   "name": "goose-duck-role-manager",
-  "framework": "nodejs",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/socket.io/(.*)", "destination": "/api/index.js" },
     { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "headers": [
-    {
-      "source": "/socket.io(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
-      ]
-    }
   ]
 }
-
