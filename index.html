@@ -2755,12 +2755,11 @@
 
   <div class="sync-bar">
     <div class="sync-dot" id="sync-dot"></div>
-    <span id="sync-status">离线中</span>
-    <span style="font-size:.76rem;">房间：</span><span class="sync-id" id="room-id-display">—</span>
+    <span style="font-size:.8rem;color:var(--ts);">房间：</span>
+    <span class="sync-id" id="room-id-display" style="font-size:1.1rem;font-weight:800;color:var(--pc);margin-right:12px;letter-spacing:1px;">—</span>
+    <span id="sync-status" style="font-size:.85rem;font-weight:700;color:var(--jade);background:rgba(90,158,106,0.1);padding:3px 8px;border-radius:12px;border:1px solid rgba(90,158,106,0.2);">📡 连接中...</span>
     <div class="sync-btns">
-      <!-- FIX 4: Join room button stays, leave button stays; no bell/approval -->
-      <button class="btn bp sm" id="join-room-btn">🔗 加入房间</button>
-      <button class="btn bleave sm" id="leave-room-btn" style="display:none;">🚪 退出房间</button>
+      <button class="btn bp sm" id="join-room-btn">🔗 切换房间</button>
       <button class="btn bnew sm" id="new-game-btn">🌅 新游戏</button>
       <!-- FIX 5: Auto-save badge replaces save button -->
       <div class="autosave-badge" id="autosave-badge">
@@ -3490,7 +3489,7 @@
     socket.on('occupancy-update', (count) => {
       const statusEl = d('sync-status');
       if (statusEl) {
-        statusEl.innerHTML = `当前在线：<strong style="color:var(--jade);">${count}</strong> 人`;
+        statusEl.innerHTML = `👥 房间同频：${count} 人`;
       }
     });
 
@@ -3539,10 +3538,9 @@
       GS.roomId = targetRoomId;
       localStorage.setItem('gduck_current_room', targetRoomId);
       
-      d('sync-status').textContent = '已连接房间 ' + targetRoomId;
+      d('sync-status').textContent = '📡 正在加入...';
       d('sync-dot').className = 'sync-dot online';
       d('room-id-display').textContent = targetRoomId;
-      d('leave-room-btn').style.display = 'none'; // 都是云端房间，无“本地退出”概念
       
       socket.emit('join-room', GS.roomId);
       saveRoomHistory(targetRoomId);
