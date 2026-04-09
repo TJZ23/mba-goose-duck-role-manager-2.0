@@ -16,6 +16,34 @@ const io = new Server(server, {
 const roomStates = new Map();
 // 存储每个房间的在线人数
 const roomOccupancy = new Map();
+const DB_FILE = path.join(__dirname, 'roomStates.json');
+
+const fs = require('fs');
+
+// 启动时读取云端历史记录
+try {
+    if (fs.existsSync(DB_FILE)) {
+        const data = fs.readFileSync(DB_FILE, 'utf8');
+        const parsed = JSON.parse(data);
+        for (const [k, v] of Object.entries(parsed)) {
+            roomStates.set(k, v);
+        }
+        console.log(`成功加载 ${roomStates.size} 个云端房间记录`);
+    }
+} catch (e) {
+    console.warn('读取历史记录失败或无记录', e);
+}
+
+// 保存到云端文件
+function saveDB() {
+    const obj = {};
+    for (const [k, v] of roomStates.entries()) {
+        obj[k] = v;
+    }
+    fs.writeFile(DB_FILE, JSON.stringify(obj), (err) => {
+        if (err) console.error('保存云端数据报错', err);
+    });
+}
 
 app.use(express.static(__dirname));
 
@@ -48,6 +76,8 @@ io.on('connection', (socket) => {
         roomStates.set(roomId, state);
         // 转发给房间内除发送者以外的所有人
         socket.to(roomId).emit('state-update', state);
+        // 持久化云端
+        saveDB();
     });
 
     // 接收并转发细粒度动作（点击、输入等）

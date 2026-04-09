@@ -3495,15 +3495,17 @@
     });
 
     function initMyRoom() {
-      GS.roomId = myRoomId;
-      GS.isHost = true;
-      GS.joinedRoom = null;
-      d('room-id-display').textContent = myRoomId;
-      d('my-room-code-display').textContent = myRoomId;
+      let r = localStorage.getItem('gduck_current_room') || myRoomId;
+      GS.roomId = r;
+      localStorage.setItem('gduck_current_room', r);
+      
+      d('room-id-display').textContent = r;
+      d('my-room-code-display').textContent = r;
       d('sync-dot').className = 'sync-dot online';
       d('leave-room-btn').style.display = 'none';
 
       socket.emit('join-room', GS.roomId);
+      saveRoomHistory(r);
     }
 
     // 监听本地操作触发状态同步（不再发送 UI 模拟点击）
@@ -3532,34 +3534,24 @@
 
 
     function directJoin(targetRoomId) {
-      if (targetRoomId === myRoomId) { alert('不能加入自己的房间！'); return; }
-      saveState();
+      if (targetRoomId === GS.roomId) { alert('你已经在此房间中！'); return; }
 
-      GS.joinedRoom = targetRoomId;
-      GS.isHost = false;
       GS.roomId = targetRoomId;
-      d('sync-status').textContent = '已加入房间 ' + targetRoomId;
+      localStorage.setItem('gduck_current_room', targetRoomId);
+      
+      d('sync-status').textContent = '已连接房间 ' + targetRoomId;
       d('sync-dot').className = 'sync-dot online';
       d('room-id-display').textContent = targetRoomId;
-      d('leave-room-btn').style.display = 'inline-flex';
+      d('leave-room-btn').style.display = 'none'; // 都是云端房间，无“本地退出”概念
       
       socket.emit('join-room', GS.roomId);
       saveRoomHistory(targetRoomId);
-      lg('system', '✅', `已连接房间 ${targetRoomId}`);
-    }
-
-    function leaveRoom() {
-      GS.joinedRoom = null;
-      GS.isHost = true;
-      d('leave-room-btn').style.display = 'none';
-      initMyRoom();
-      saveState();
-      lg('system', '🚪', '已退出他人房间，回到本地模式');
+      lg('system', '✅', `已连接云端房间 ${targetRoomId}`);
     }
 
     function onStateChanged() {
       triggerAutoSave();
-      if (GS.isHost && GS.roomId) broadcastState();
+      if (GS.roomId) broadcastState();
     }
 
     // ===================== CONSTANTS =====================
@@ -3601,17 +3593,12 @@
       const dot = d('autosave-dot');
       if (dot) dot.classList.add('saving');
       autoSaveTimeout = setTimeout(() => {
-        saveState();
-        if (GS.isHost && GS.roomId) broadcastState();
+        if (GS.roomId) broadcastState();
         if (dot) dot.classList.remove('saving');
         const lbl = d('autosave-label');
-        if (lbl) { lbl.textContent = '已保存 ' + gt(); setTimeout(() => { lbl.textContent = '自动保存'; }, 3000); }
-      }, 800);
+        if (lbl) { lbl.textContent = '已同步云端 ' + gt(); setTimeout(() => { lbl.textContent = '实时同步'; }, 3000); }
+      }, 400);
     }
-    // Periodic auto-save every 20s
-    setInterval(() => { saveState(); }, 20000);
-    // Real-time visual sync (timers, etc) directly over Socket.io
-    setInterval(() => { if (GS.isHost && GS.roomId) broadcastState(); }, 500);
 
     const MUSIC_STYLES = [
       { id: 'teahouse', name: '茶馆雅座', icon: '🍵', desc: '琵琶·悠然' },
@@ -3809,20 +3796,7 @@
       if (log.children.length > 120) log.removeChild(log.lastChild);
     }
 
-    // ===================== SAVE/LOAD =====================
-    function saveState() {
-      try {
-        const state = {
-          teams: GS.teams,
-          totalTasks: GS.totalTasks, taskTarget: GS.taskTarget, meetRound: GS.meetRound, sabSuccessCount: GS.sabSuccessCount,
-          players: GS.players.map(p => ({ id: p.id, name: p.name, teamIdx: p.teamIdx, role: p.element.dataset.role, tasks: p.tasks, votes: p.votes, dead: p.element.classList.contains('eliminated'), resurrected: p.element.classList.contains('resurrected') })),
-          roleCounts: { goose: parseInt(d('cnt-goose').value) || 0, det: parseInt(d('cnt-det').value) || 0, sher: parseInt(d('cnt-sher').value) || 0, duck: parseInt(d('cnt-duck').value) || 0, pig: parseInt(d('cnt-pig').value) || 0, dodo: parseInt(d('cnt-dodo').value) || 0 },
-          currentBGM: GS.currentBGM, bgVolume: GS.bgVolume, muted: GS.muted, bgmStopped: GS.bgmStopped,
-        };
-        localStorage.setItem('gduck_save', JSON.stringify(state));
-      } catch (e) { }
-    }
-
+    // 删除旧的 saveState，全部走云端保存
     function exportState() {
       return {
         teams: GS.teams,
@@ -3888,42 +3862,8 @@
         updStats();
         try { updJailBoard(); } catch (e) { }
         d('sync-dot').className = 'sync-dot online';
+        if (GS.players.length > 0) { d('step2-btn').disabled = false; d('step3-btn').disabled = false; }
       }
-    }
-
-    function loadState() {
-      try {
-        const raw = localStorage.getItem('gduck_save');
-        if (!raw) return false;
-        const state = JSON.parse(raw);
-        if (state.teams && Array.isArray(state.teams)) GS.teams = state.teams;
-        buildTeamConfigUI();
-        GS.taskTarget = state.taskTarget || 80; d('tgt-input').value = GS.taskTarget; si('tgt-label', GS.taskTarget);
-        if (state.roleCounts) { const rc = state.roleCounts;['goose', 'det', 'sher', 'duck', 'pig', 'dodo'].forEach(k => { const el = d('cnt-' + k); if (el) el.value = rc[k] || 0; }); }
-        if (state.currentBGM) GS.currentBGM = state.currentBGM;
-        if (typeof state.bgVolume === 'number') { GS.bgVolume = state.bgVolume; d('bgm-vol').value = Math.round(state.bgVolume * 100); d('bgm-vol-label').textContent = Math.round(state.bgVolume * 100) + '%'; }
-        if (typeof state.muted === 'boolean') { GS.muted = state.muted; d('music-btn').textContent = GS.muted ? '🔇' : '🎵'; }
-        if (typeof state.bgmStopped === 'boolean') GS.bgmStopped = state.bgmStopped;
-        const totalPlayers = GS.teams.reduce((a, t) => a + (t.count || 0), 0);
-        if (totalPlayers > 0) {
-          genPlayers(true);
-          if (state.players) {
-            state.players.forEach(sp => {
-              const p = GS.players.find(x => x.id === sp.id); if (!p) return;
-              p.tasks = sp.tasks; p.element.querySelector('.tc').textContent = sp.tasks;
-              p.votes = sp.votes || 0;
-              if (sp.role) setRole(p.element, sp.role);
-              if (sp.dead) elimP(p.element, true);
-              else if (sp.resurrected) resP(p.element, true);
-            });
-            GS.totalTasks = state.totalTasks || 0;
-          }
-        }
-        GS.meetRound = state.meetRound || 1; d('m-round-input').value = GS.meetRound;
-        GS.sabSuccessCount = state.sabSuccessCount || 0;
-        updStats(); updTT(); refCands(); refPickers();
-        return true;
-      } catch (e) { return false; }
     }
 
     // ===================== TEAM CONFIG =====================
@@ -4815,14 +4755,13 @@
       d('step2-btn').disabled = true;
       d('step3-btn').disabled = true;
       initMyRoom();
-      d('my-room-code-display').textContent = myRoomId;
-      loadState();
-      if (GS.players.length > 0) { d('step2-btn').disabled = false; d('step3-btn').disabled = false; }
+      d('my-room-code-display').textContent = GS.roomId;
+      // 强制去除了原单机加载模式，由于使用了云端存档，初始化后只需等待服务器推送 state-update
       if (GS.bgmStopped) d('bgm-stop-btn').textContent = '▶ 开启音乐';
       setVotingLocked(true);
       const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
       document.body.addEventListener('click', once);
-      lg('system', '🏮', `控制台启动 · 我的房间号：${myRoomId}`);
+      lg('system', '🏮', `控制台启动 · 已连接云端房间：${GS.roomId}`);
     });
   </script>
 </body>
