@@ -3407,8 +3407,8 @@
 
   <div class="fwov" id="fw-ov" style="display:none;"></div>
 
-  <!-- 引入 Socket.io 客户端脚本 -->
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- 引入 Socket.io 客户端脚本（使用 CDN，防止 Vercel 部署报错） -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   
   <script>
     // ===================== PEER ID =====================
@@ -3432,7 +3432,13 @@
     }
 
     // ===================== SOCKET.IO NETWORK SYNC =====================
-    const socket = (typeof io !== 'undefined') ? io() : { on: () => { }, emit: () => { } };
+    // 【重要提示：Vercel 部署说明】
+    // Vercel 属于无服务器（Serverless）平台，本身不支持运行持久化的 Socket.io (server.js)。
+    // 如果你部署在 Vercel 上，请将 server.js 单独部署到支持 WebSockets 的平台（如 Render, Railway 等），
+    // 然后将下方的 SOCKET_SERVER_URL 替换为你部署好的后端地址。
+    // 如果你在本地运行（通过 node server.js），保留为空即可，会自动使用当前地址。
+    const SOCKET_SERVER_URL = ""; 
+    const socket = (typeof io !== 'undefined') ? io(SOCKET_SERVER_URL || undefined) : { on: () => { }, emit: () => { } };
 
     function getRoomKey(roomId) { return 'gduck-' + roomId; }
 
