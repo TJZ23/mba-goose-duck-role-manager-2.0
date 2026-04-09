@@ -3463,7 +3463,10 @@
     setInterval(() => { if (GS.isHost) broadcastState(); }, 500);
 
     // ===================== SOCKET.IO NETWORK SYNC =====================
-    const socket = io();
+    // 【修改这里】：当您在 Render 发布成功后，会得到一个以 onrender.com 结尾的网址。
+    // 请将下面这行改成类似于： const BACKEND_URL = "https://您的项目名字.onrender.com";
+    const BACKEND_URL = ""; 
+    const socket = BACKEND_URL ? io(BACKEND_URL, { secure: true }) : io();
 
     // Join history logic
     function saveRoomHistory(roomId) {
