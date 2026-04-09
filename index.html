@@ -3430,7 +3430,6 @@
 
     // ===================== SOCKET.IO NETWORK SYNC =====================
     const socket = (typeof io !== 'undefined') ? io() : { on: () => { }, emit: () => { } };
-    let isRemoteProcessing = false; // 同步状态锁
 
     function getRoomKey(roomId) { return 'gduck-' + roomId; }
 
@@ -3476,14 +3475,7 @@
 
     // Socket Event Listeners
     socket.on('state-update', (state) => {
-      // 如果本地正在处理自己的点击，暂时忽略全量状态，防止 UI 抖动
-      if (isRemoteProcessing) return;
       applyRemoteState(state);
-    });
-
-    socket.on('peer-action', (data) => {
-      // 核心：处理来自其他人的独立操作
-      handleRemoteAction(data);
     });
 
     socket.on('occupancy-update', (count) => {
@@ -3492,43 +3484,6 @@
         statusEl.innerHTML = `当前在线：<strong style="color:var(--jade);">${count}</strong> 人`;
       }
     });
-
-    function handleRemoteAction(data) {
-      if (isRemoteProcessing) return;
-      isRemoteProcessing = true; // 锁定，防止点击事件被重复发送
-
-      try {
-        if (data.type === 'SIM_CLICK') {
-          let el = null;
-          if (data.id) el = document.getElementById(data.id);
-          else if (data.dataset) {
-            // 通过数据集找到对应的按钮（如角色选择、页签切换）
-            const elems = document.getElementsByClassName(data.className.split(' ')[0]);
-            for (let e of elems) {
-              let match = true;
-              for (let k in data.dataset) if (e.dataset[k] !== data.dataset[k]) match = false;
-              if (match) { el = e; break; }
-            }
-          }
-          if (el) { 
-            el.click(); 
-          }
-        }
-        if (data.type === 'SIM_INPUT') {
-          let el = document.getElementById(data.id);
-          if (el) { 
-            el.value = data.value; 
-            el.dispatchEvent(new Event('input', { bubbles: true })); 
-            el.dispatchEvent(new Event('change', { bubbles: true })); 
-            el.dispatchEvent(new Event('blur', { bubbles: true })); 
-          }
-        }
-      } catch (err) {
-        console.warn('同步操作执行失败:', err);
-      } finally {
-        isRemoteProcessing = false; // 解锁
-      }
-    }
 
     function initMyRoom() {
       GS.roomId = myRoomId;
@@ -3542,10 +3497,9 @@
       socket.emit('join-room', GS.roomId);
     }
 
-    // 事件拦截与同步发送
+    // 监听本地操作触发状态同步（不再发送 UI 模拟点击）
     document.addEventListener('click', (e) => {
-      // 如果是处理远程同步导致的点击，不重复发送
-      if (isRemoteProcessing || !GS.roomId) return;
+      if (!GS.roomId) return;
       
       const target = e.target.closest('button, .sc2, .cpc, .anc, .sab-punish-opt, .tbtn, .pc2, .rh-btn');
       if (!target) return;
@@ -3554,32 +3508,15 @@
       if (target.classList.contains('tbtn') && !target.dataset.tab) return; // 忽略无效页签
       if (bypassIds.includes(target.id) || (target.id && target.id.includes('cancel'))) return;
 
-      // 发送动作给房间内其他人
-      let action = {
-        type: 'SIM_CLICK',
-        id: target.id || null,
-        dataset: target.id ? null : { ...target.dataset },
-        className: target.id ? null : target.className
-      };
-      
-      socket.emit('sync-action', { roomId: GS.roomId, action: action });
-      
-      // 每次本地重要操作后，延迟一小会广播一次全量状态，确保新加入者始终同步
+      // 每次本地重要操作后，延迟一小会广播一次全量状态
       setTimeout(onStateChanged, 100);
     }, true);
 
     document.addEventListener('input', (e) => {
-      if (isRemoteProcessing || !e.target.id || !GS.roomId) return;
+      if (!e.target.id || !GS.roomId) return;
       const bypassIds = ['join-room-input', 'bgm-vol'];
       if (bypassIds.includes(e.target.id)) return;
 
-      let action = {
-        type: 'SIM_INPUT',
-        id: e.target.id,
-        value: e.target.value
-      };
-      socket.emit('sync-action', { roomId: GS.roomId, action: action });
-      
       // 输入框内容同步也触发一次状态持久化
       setTimeout(onStateChanged, 300);
     }, true);
@@ -3893,16 +3830,10 @@
         meetingActive: GS.meetingActive,
         votingLocked: GS.votingLocked,
         pkMode: GS.pkMode,
-        tbnActive: Array.from(document.querySelectorAll('.tbtn')).findIndex(b => b.classList.contains('active')),
-        modals: Array.from(document.querySelectorAll('.mo')).map(m => ({ id: m.id, className: m.className })),
-        resultModHTML: d('res-mod-inner').innerHTML,
-        sabResultHTML: d('mod-sab-result').querySelector('.mod').innerHTML,
-        pkEndHTML: d('mod-pk-end').innerHTML,
         sabTimerText: d('sab-timer').textContent,
         discClkText: d('disc-clk').textContent,
         voteBoardHTML: d('vote-rb').innerHTML,
-        voteRbShow: d('vote-rb').classList.contains('show'),
-        sabConfHTML: d('mod-sab-punish-confirm').innerHTML
+        voteRbShow: d('vote-rb').classList.contains('show')
       };
     }
 
@@ -3941,30 +3872,10 @@
         try { setVotingLocked(GS.votingLocked); } catch (e) { }
         GS.pkMode = !!state.pkMode;
 
-        // UI elements HTML sync natively
+        // 允许用户独立操作，去除了弹窗、选填项和无关UI的强制同步
         d('vote-rb').innerHTML = state.voteBoardHTML || '';
         if (state.voteRbShow) d('vote-rb').classList.add('show'); else d('vote-rb').classList.remove('show');
-        d('res-mod-inner').innerHTML = state.resultModHTML || '';
-        d('mod-sab-result').querySelector('.mod').innerHTML = state.sabResultHTML || '';
-        d('mod-pk-end').innerHTML = state.pkEndHTML || '';
-        d('mod-sab-punish-confirm').innerHTML = state.sabConfHTML || '';
-
-        // Modals
-        if (state.modals) {
-          state.modals.forEach(sm => {
-            const m = d(sm.id);
-            if (m && m.className !== sm.className) m.className = sm.className;
-          });
-        }
-
-        // Tab Sync
-        if (state.tbnActive !== undefined && state.tbnActive > -1) {
-          const tabBtns = Array.from(document.querySelectorAll('.tbtn'));
-          if (tabBtns[state.tbnActive] && !tabBtns[state.tbnActive].classList.contains('active')) {
-            activateTab(tabBtns[state.tbnActive].dataset.tab);
-          }
-        }
-
+        
         updStats();
         try { updJailBoard(); } catch (e) { }
         d('sync-dot').className = 'sync-dot online';
