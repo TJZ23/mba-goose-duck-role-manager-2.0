@@ -1,0 +1,5014 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>《鹅鸭杀：大厅潜行版》工委控制台</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --pc: #C4963A;
+      --pl: #F5E6B8;
+      --pd: #9A7020;
+      --sc: #B07040;
+      --ac: #D4A96A;
+      --bgc: rgba(255, 251, 240, 0.98);
+      --tp: #3D2E1A;
+      --ts: #7A6040;
+      --tl: #A0845A;
+      --suc: #5A9E6A;
+      --erc: #D05050;
+      --slA: 0 2px 12px rgba(100, 70, 20, 0.10);
+      --slM: 0 6px 24px rgba(100, 70, 20, 0.14);
+      --slH: 0 12px 40px rgba(100, 70, 20, 0.20);
+      --br: 14px;
+      --brl: 20px;
+      --sand: #FDF8EE;
+      --cream: #F9F0D8;
+      --gold: #C4963A;
+      --rust: #A0522D;
+      --lotus: #C87AA0;
+      --jade: #5A8A70;
+      --sky: #6A9BB0;
+      --border: rgba(196, 150, 58, 0.22);
+      --border-strong: rgba(196, 150, 58, 0.45);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', -apple-system, sans-serif;
+      background: var(--sand);
+      min-height: 100vh;
+      color: var(--tp);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 20% 0%, rgba(196, 150, 58, 0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, rgba(160, 82, 45, 0.05) 0%, transparent 60%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 30 Q15 0 30 30 Q45 60 60 30' fill='none' stroke='%23C4963A' stroke-width='0.3' opacity='0.18'/%3E%3C/svg%3E") repeat;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* FIX 1: Floating emoji - fixed animation to prevent line accumulation */
+    .fa-wrap {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .fa {
+      position: absolute;
+      font-size: 1.8rem;
+      opacity: 0;
+      animation: floatAcross linear forwards;
+    }
+
+    @keyframes floatAcross {
+      0% {
+        transform: translateX(0) translateY(0) rotate(0deg);
+        opacity: 0;
+      }
+
+      8% {
+        opacity: 0.14;
+      }
+
+      92% {
+        opacity: 0.14;
+      }
+
+      100% {
+        transform: translateX(calc(100vw + 160px)) translateY(-80px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes gf {
+
+      0%,
+      100% {
+        transform: translateY(0) rotate(-3deg);
+      }
+
+      50% {
+        transform: translateY(-8px) rotate(3deg);
+      }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes rGlow {
+      0% {
+        box-shadow: 0 0 0 0 rgba(90, 158, 106, .8);
+      }
+
+      70% {
+        box-shadow: 0 0 0 12px rgba(90, 158, 106, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(90, 158, 106, 0);
+      }
+    }
+
+    @keyframes tGlow {
+      0% {
+        box-shadow: 0 0 0 0 rgba(196, 150, 58, .8);
+      }
+
+      70% {
+        box-shadow: 0 0 0 14px rgba(196, 150, 58, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(196, 150, 58, 0);
+      }
+    }
+
+    @keyframes alPulse {
+
+      0%,
+      100% {
+        background: linear-gradient(135deg, #D05050, #B03030);
+      }
+
+      50% {
+        background: linear-gradient(135deg, #C03030, #902020);
+        box-shadow: 0 0 40px rgba(200, 50, 50, .45);
+      }
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-20px) rotate(0deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    @keyframes fw {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 0;
+      }
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .3;
+      }
+    }
+
+    @keyframes disc-urgent {
+
+      0%,
+      100% {
+        color: var(--erc);
+      }
+
+      50% {
+        color: #FF8080;
+      }
+    }
+
+    @keyframes newgame-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 2px 8px rgba(90, 158, 106, .3);
+      }
+
+      50% {
+        box-shadow: 0 4px 20px rgba(90, 158, 106, .55);
+      }
+    }
+
+    @keyframes bellShake {
+
+      0%,
+      100% {
+        transform: rotate(0);
+      }
+
+      15% {
+        transform: rotate(15deg);
+      }
+
+      30% {
+        transform: rotate(-12deg);
+      }
+
+      45% {
+        transform: rotate(10deg);
+      }
+
+      60% {
+        transform: rotate(-8deg);
+      }
+
+      75% {
+        transform: rotate(5deg);
+      }
+
+      90% {
+        transform: rotate(-3deg);
+      }
+    }
+
+    @keyframes stepIn {
+      from {
+        opacity: 0;
+        transform: translateX(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes jailShake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      20% {
+        transform: translateX(-4px);
+      }
+
+      40% {
+        transform: translateX(4px);
+      }
+
+      60% {
+        transform: translateX(-3px);
+      }
+
+      80% {
+        transform: translateX(3px);
+      }
+    }
+
+    @keyframes prisonSlide {
+      0% {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes barsDrop {
+      0% {
+        transform: scaleY(0);
+        transform-origin: top;
+      }
+
+      100% {
+        transform: scaleY(1);
+        transform-origin: top;
+      }
+    }
+
+    @keyframes spotlightFlash {
+
+      0%,
+      100% {
+        opacity: 0;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .mc {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .site-header {
+      text-align: center;
+      padding: 32px 20px 24px;
+      position: relative;
+    }
+
+    .site-header::after {
+      content: "";
+      display: block;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+      margin: 20px auto 0;
+      max-width: 600px;
+    }
+
+    .mt {
+      font-size: clamp(1.8rem, 4.5vw, 3rem);
+      font-weight: 700;
+      color: var(--pc);
+      font-family: 'Ma Shan Zheng', cursive;
+      letter-spacing: .08em;
+      position: relative;
+      display: inline-block;
+    }
+
+    .mt::before {
+      content: "🪷";
+      position: absolute;
+      top: -14px;
+      left: -40px;
+      font-size: .55em;
+      opacity: .6;
+      animation: gf 3.5s ease-in-out infinite;
+    }
+
+    .mt::after {
+      content: "🪷";
+      position: absolute;
+      top: -14px;
+      right: -40px;
+      font-size: .55em;
+      opacity: .6;
+      animation: gf 3.5s ease-in-out infinite reverse;
+    }
+
+    .sub-title {
+      font-size: .88rem;
+      color: var(--ts);
+      letter-spacing: .18em;
+      margin-top: 6px;
+      font-family: 'Noto Serif SC', serif;
+      font-weight: 300;
+    }
+
+    /* FIX 5: Removed save button - sync bar simplified */
+    .sync-bar {
+      background: rgba(253, 248, 238, 0.96);
+      border-bottom: 1px solid var(--border);
+      padding: 7px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: .8rem;
+      color: var(--ts);
+      position: sticky;
+      top: 0;
+      z-index: 300;
+      backdrop-filter: blur(10px);
+    }
+
+    .sync-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ccc;
+      flex-shrink: 0;
+    }
+
+    .sync-dot.online {
+      background: #5A9E6A;
+      box-shadow: 0 0 6px #5A9E6A;
+    }
+
+    .sync-dot.syncing {
+      background: var(--gold);
+      box-shadow: 0 0 6px var(--gold);
+      animation: pulse-dot 1s infinite;
+    }
+
+    .sync-id {
+      font-family: monospace;
+      background: rgba(196, 150, 58, .1);
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: var(--tp);
+      font-size: .76rem;
+      border: 1px solid var(--border);
+    }
+
+    .sync-btns {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* Auto-save indicator */
+    .autosave-badge {
+      font-size: .72rem;
+      color: var(--ts);
+      background: rgba(90, 158, 106, .1);
+      border: 1px solid rgba(90, 158, 106, .3);
+      border-radius: 6px;
+      padding: 2px 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .autosave-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #5A9E6A;
+    }
+
+    .autosave-dot.saving {
+      background: var(--gold);
+      animation: pulse-dot .8s infinite;
+    }
+
+    .card {
+      background: var(--bgc);
+      border-radius: var(--brl);
+      box-shadow: var(--slM);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .card-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--pd), var(--pc), var(--ac), var(--pd));
+    }
+
+    .cb {
+      padding: 18px 22px;
+    }
+
+    .tw {
+      background: var(--bgc);
+      border-radius: var(--brl);
+      box-shadow: var(--slM);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .tw::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--pd), var(--pc), var(--ac));
+      z-index: 1;
+    }
+
+    .tbar {
+      display: flex;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border);
+      background: rgba(249, 240, 216, 0.6);
+      padding-top: 3px;
+      scrollbar-width: none;
+    }
+
+    .tbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tbtn {
+      padding: 13px 18px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: .84rem;
+      font-weight: 600;
+      color: var(--ts);
+      font-family: 'Noto Sans SC', inherit;
+      transition: all .18s;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      letter-spacing: .02em;
+    }
+
+    .tbtn.active {
+      color: var(--pc);
+      border-bottom-color: var(--pc);
+      background: rgba(196, 150, 58, .05);
+    }
+
+    .tbtn:hover:not(.active) {
+      color: var(--tp);
+      background: rgba(196, 150, 58, .06);
+    }
+
+    .tc {
+      display: none;
+    }
+
+    .tc.active {
+      display: block;
+    }
+
+    .ti {
+      padding: 20px 22px;
+    }
+
+    .pbw {
+      background: rgba(196, 150, 58, .1);
+      border-radius: 999px;
+      height: 26px;
+      overflow: hidden;
+      position: relative;
+      border: 1.5px solid var(--border-strong);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, .06);
+    }
+
+    .pbf {
+      height: 100%;
+      background: linear-gradient(90deg, var(--pd), var(--pc), #E8C870);
+      border-radius: 999px;
+      transition: width .7s cubic-bezier(.4, 0, .2, 1);
+      position: relative;
+    }
+
+    .pbl {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--tp);
+      white-space: nowrap;
+      z-index: 1;
+    }
+
+    .sg {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 10px;
+    }
+
+    .sc2 {
+      background: rgba(255, 255, 255, .85);
+      border-radius: var(--br);
+      padding: 14px 8px;
+      text-align: center;
+      box-shadow: var(--slA);
+      border: 1.5px solid var(--border);
+      transition: all .22s;
+      position: relative;
+      overflow: hidden;
+      cursor: default;
+    }
+
+    .sc2::before {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--pc), var(--ac));
+    }
+
+    .sc2:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--slM);
+      border-color: var(--border-strong);
+    }
+
+    .sc2.clickable {
+      cursor: pointer;
+    }
+
+    .sn {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--pc);
+      font-family: 'Ma Shan Zheng', cursive;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .sl {
+      font-size: .74rem;
+      color: var(--ts);
+      font-weight: 500;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: var(--br);
+      font-weight: 600;
+      font-size: .86rem;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: 'Noto Sans SC', inherit;
+      letter-spacing: .02em;
+    }
+
+    .btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0);
+      transition: background .2s;
+    }
+
+    .btn:hover::after {
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .btn:active {
+      transform: scale(.97);
+    }
+
+    .bp {
+      background: linear-gradient(135deg, var(--pc), var(--pd));
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(156, 112, 32, .25);
+    }
+
+    .bp:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 16px rgba(156, 112, 32, .35);
+    }
+
+    .bs {
+      background: linear-gradient(135deg, var(--sc), #8A4020);
+      color: #fff;
+    }
+
+    .bs:hover {
+      transform: translateY(-2px);
+    }
+
+    .bo {
+      background: rgba(255, 255, 255, .9);
+      color: var(--pc);
+      border: 1.5px solid var(--border-strong);
+    }
+
+    .bo:hover {
+      background: var(--pc);
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .bd {
+      background: linear-gradient(135deg, #D05050, #A03030);
+      color: #fff;
+    }
+
+    .bd:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(200, 50, 50, .3);
+    }
+
+    .bsc {
+      background: linear-gradient(135deg, var(--jade), #3A6A50);
+      color: #fff;
+    }
+
+    .bsc:hover {
+      transform: translateY(-2px);
+    }
+
+    .bw {
+      background: linear-gradient(135deg, #D4A020, #B07820);
+      color: #fff;
+    }
+
+    .bw:hover {
+      transform: translateY(-2px);
+    }
+
+    .bpu {
+      background: linear-gradient(135deg, var(--lotus), #8A4A78);
+      color: #fff;
+    }
+
+    .bpu:hover {
+      transform: translateY(-2px);
+    }
+
+    .btrophy {
+      background: linear-gradient(135deg, #D07020, var(--pc));
+      color: #fff;
+    }
+
+    .btrophy:hover {
+      transform: translateY(-2px);
+    }
+
+    .bnew {
+      background: linear-gradient(135deg, #4A7A5A, #2E5A3A);
+      color: #fff;
+      animation: newgame-pulse 2.5s ease-in-out infinite;
+    }
+
+    .bnew:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 122, 90, .45);
+    }
+
+    .bleave {
+      background: linear-gradient(135deg, #7A6050, #5A4030);
+      color: #fff;
+    }
+
+    .bleave:hover {
+      transform: translateY(-2px);
+    }
+
+    .sm {
+      padding: 7px 12px;
+      font-size: .8rem;
+      border-radius: 10px;
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .ni {
+      width: 64px;
+      padding: 7px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 9px;
+      text-align: center;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--tp);
+      background: rgba(255, 255, 255, .92);
+      transition: all .2s;
+      font-family: inherit;
+    }
+
+    .ni:focus {
+      outline: none;
+      border-color: var(--pc);
+      box-shadow: 0 0 0 3px rgba(196, 150, 58, .15);
+    }
+
+    .ti2 {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: .86rem;
+      font-family: inherit;
+      background: rgba(255, 255, 255, .95);
+      color: var(--tp);
+      transition: all .2s;
+    }
+
+    .ti2:focus {
+      outline: none;
+      border-color: var(--pc);
+    }
+
+    .sdiv {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 16px 0;
+    }
+
+    /* SETUP STEPS */
+    .setup-steps {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+    }
+
+    .setup-step-btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: none;
+      background: rgba(255, 255, 255, .6);
+      cursor: pointer;
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--ts);
+      font-family: inherit;
+      transition: all .2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+
+    .setup-step-btn:last-child {
+      border-right: none;
+    }
+
+    .setup-step-btn.active {
+      background: linear-gradient(135deg, var(--pc), var(--pd));
+      color: #fff;
+    }
+
+    .setup-step-btn.done {
+      background: rgba(90, 158, 106, .1);
+      color: var(--jade);
+    }
+
+    .setup-step-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .setup-step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      font-size: .75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-panel {
+      display: none;
+      animation: stepIn .3s ease;
+    }
+
+    .step-panel.active {
+      display: block;
+    }
+
+    /* TEAM CONFIG */
+    .team-config-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .team-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, .75);
+      border-radius: 12px;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+    }
+
+    .team-name-input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: .9rem;
+      font-weight: 600;
+      font-family: 'Noto Serif SC', serif;
+      color: var(--tp);
+      background: rgba(255, 255, 255, .95);
+    }
+
+    .team-name-input:focus {
+      outline: none;
+      border-color: var(--pc);
+    }
+
+    .team-count-direct {
+      width: 60px;
+      padding: 6px 8px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 8px;
+      text-align: center;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--pc);
+      background: rgba(255, 255, 255, .95);
+      font-family: inherit;
+    }
+
+    .team-count-direct:focus {
+      outline: none;
+      border-color: var(--pc);
+    }
+
+    .team-del-btn {
+      background: rgba(208, 80, 80, .08);
+      border: 1.5px solid rgba(208, 80, 80, .22);
+      border-radius: 8px;
+      color: #A03030;
+      cursor: pointer;
+      padding: 5px 8px;
+      font-size: .82rem;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all .15s;
+      flex-shrink: 0;
+    }
+
+    .team-del-btn:hover {
+      background: #D05050;
+      color: #fff;
+      border-color: #D05050;
+    }
+
+    .add-team-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 16px;
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 12px;
+      background: rgba(196, 150, 58, .04);
+      color: var(--ts);
+      font-size: .86rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s;
+      font-family: inherit;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .add-team-btn:hover {
+      border-color: var(--pc);
+      color: var(--pc);
+      background: rgba(196, 150, 58, .08);
+    }
+
+    .tg {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .tig {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .tl2 {
+      font-weight: 600;
+      color: var(--tp);
+      font-size: .86rem;
+      text-align: center;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    .rl {
+      display: grid;
+      gap: 8px;
+    }
+
+    .ri {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, .7);
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ri::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--pc);
+      border-radius: 2px 0 0 2px;
+    }
+
+    .ri:hover {
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, .92);
+    }
+
+    .rii {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      flex: 1;
+    }
+
+    .ricn {
+      font-size: 1.3rem;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: rgba(196, 150, 58, .1);
+    }
+
+    .rnm {
+      font-weight: 700;
+      font-size: .9rem;
+      color: var(--tp);
+      margin-bottom: 1px;
+    }
+
+    .rd {
+      font-size: .76rem;
+      color: var(--ts);
+    }
+
+    .ri2 {
+      width: 64px;
+      padding: 7px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--pc);
+      background: rgba(255, 255, 255, .95);
+      font-family: inherit;
+    }
+
+    .ri2:focus {
+      outline: none;
+      border-color: var(--pc);
+    }
+
+    .nr {
+      display: none;
+    }
+
+    .tsec {
+      opacity: 0;
+      animation: fadeUp .4s ease forwards;
+      margin-bottom: 16px;
+    }
+
+    .tsec:nth-child(1) {
+      animation-delay: .04s;
+    }
+
+    .tsec:nth-child(2) {
+      animation-delay: .08s;
+    }
+
+    .tsec:nth-child(3) {
+      animation-delay: .12s;
+    }
+
+    .tsec:nth-child(4) {
+      animation-delay: .16s;
+    }
+
+    .tsec:nth-child(5) {
+      animation-delay: .20s;
+    }
+
+    .tsec:nth-child(6) {
+      animation-delay: .24s;
+    }
+
+    .tthd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .ttitle {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--pc);
+      font-family: 'Ma Shan Zheng', cursive;
+      letter-spacing: .06em;
+    }
+
+    .ttitle::before {
+      content: "◆";
+      margin-right: 6px;
+      font-size: .7em;
+      opacity: .6;
+    }
+
+    .tmeta {
+      font-size: .78rem;
+      color: var(--ts);
+      background: rgba(196, 150, 58, .08);
+      padding: 3px 9px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+    }
+
+    .pg {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+      gap: 8px;
+    }
+
+    .pc2 {
+      background: rgba(255, 255, 255, .96);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      min-height: 96px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      box-shadow: var(--slA);
+    }
+
+    .pc2:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: var(--slM);
+      border-color: var(--border-strong);
+    }
+
+    .pc2:active {
+      transform: scale(.97);
+    }
+
+    .pc2.eliminated {
+      background: linear-gradient(135deg, rgba(160, 160, 160, .08), rgba(255, 255, 255, .9));
+      border-color: rgba(160, 160, 160, .3);
+      opacity: .68;
+      transform: scale(.94);
+    }
+
+    .pc2.eliminated:hover {
+      transform: scale(.96);
+    }
+
+    .pc2.resurrected {
+      background: linear-gradient(135deg, rgba(90, 158, 106, .1), rgba(255, 255, 255, .97));
+      border-color: var(--suc);
+      animation: rGlow .9s ease-out;
+    }
+
+    .pc2.tf {
+      animation: tGlow .6s ease-out;
+    }
+
+    .pname {
+      font-weight: 700;
+      font-size: .84rem;
+      color: var(--tp);
+      line-height: 1.3;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    .prole {
+      font-size: .68rem;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(196, 150, 58, .1);
+      color: var(--ts);
+      font-weight: 600;
+      display: none;
+      border: 1px solid var(--border);
+    }
+
+    .prole.vis {
+      display: block;
+    }
+
+    .ptask {
+      font-size: .74rem;
+      font-weight: 700;
+      color: var(--pc);
+      background: rgba(196, 150, 58, .1);
+      border-radius: 6px;
+      padding: 2px 7px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .sdot {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .sdot.alive {
+      background: var(--jade);
+    }
+
+    .sdot.dead {
+      background: var(--erc);
+    }
+
+    .sdot.res {
+      background: var(--lotus);
+    }
+
+    /* ACTION MENU */
+    .am-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 690;
+      display: none;
+      background: rgba(30, 20, 10, .25);
+      backdrop-filter: blur(2px);
+    }
+
+    .am-backdrop.open {
+      display: block;
+    }
+
+    .am {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(.92);
+      background: var(--bgc);
+      border-radius: 18px;
+      padding: 14px 13px 12px;
+      box-shadow: 0 12px 48px rgba(60, 40, 10, .3);
+      border: 1.5px solid var(--border-strong);
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 700;
+      min-width: 210px;
+      opacity: 0;
+      transition: opacity .18s, transform .18s;
+    }
+
+    .am.open {
+      display: flex;
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .amname {
+      font-weight: 700;
+      color: var(--tp);
+      font-size: .9rem;
+      text-align: center;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3px;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    .ab {
+      padding: 9px 13px;
+      border: none;
+      border-radius: 9px;
+      font-weight: 600;
+      font-size: .83rem;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    .ab:hover {
+      transform: translateX(3px);
+    }
+
+    .ab.ta {
+      background: linear-gradient(135deg, var(--pc), var(--pd));
+      color: #fff;
+    }
+
+    .ab.ts {
+      background: linear-gradient(135deg, #D08020, #A05010);
+      color: #fff;
+    }
+
+    .ab.el {
+      background: linear-gradient(135deg, #D05050, #902020);
+      color: #fff;
+    }
+
+    .ab.re {
+      background: linear-gradient(135deg, var(--jade), #2E6A40);
+      color: #fff;
+    }
+
+    .ab.ro {
+      background: rgba(196, 150, 58, .1);
+      color: var(--tp);
+      border: 1px solid var(--border);
+    }
+
+    .ab.cl {
+      background: rgba(180, 160, 130, .12);
+      color: var(--ts);
+      justify-content: center;
+    }
+
+    /* SABOTAGE BANNER */
+    .sb {
+      display: none;
+      border-radius: var(--br);
+      padding: 15px 18px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #D05050, #A03030);
+      color: #fff;
+    }
+
+    .sb.active {
+      display: block;
+      animation: alPulse 1.1s ease-in-out infinite;
+    }
+
+    .sbt {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .stimer {
+      font-size: 2.6rem;
+      font-weight: 700;
+      font-family: 'Ma Shan Zheng', cursive;
+      line-height: 1;
+    }
+
+    .sb h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .sb p {
+      font-size: .84rem;
+      opacity: .9;
+    }
+
+    .sba {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .sbox {
+      background: rgba(208, 80, 80, .05);
+      border: 1.5px solid rgba(208, 80, 80, .2);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .sbox h4 {
+      color: #B03030;
+      font-size: .88rem;
+      font-weight: 700;
+      margin-bottom: 9px;
+    }
+
+    .mrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .mrow label {
+      font-weight: 600;
+      color: var(--tp);
+      font-size: .86rem;
+      white-space: nowrap;
+    }
+
+    .wb {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 11px;
+    }
+
+    .wbd {
+      padding: 5px 11px;
+      border-radius: 8px;
+      font-size: .78rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .wg {
+      background: rgba(196, 150, 58, .12);
+      color: #7A5A18;
+      border: 1.5px solid rgba(196, 150, 58, .3);
+    }
+
+    .wdk {
+      background: rgba(208, 80, 80, .08);
+      color: #8B2020;
+      border: 1.5px solid rgba(208, 80, 80, .28);
+    }
+
+    /* Sabotage punishment choices — RADIO STYLE */
+    .sab-punish-opts {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .sab-punish-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, .7);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all .16s;
+      font-size: .84rem;
+    }
+
+    .sab-punish-opt:hover {
+      border-color: var(--erc);
+      background: rgba(208, 80, 80, .05);
+    }
+
+    .sab-punish-opt input[type=radio] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--erc);
+    }
+
+    .sab-punish-opt.selected {
+      border-color: var(--erc);
+      background: rgba(208, 80, 80, .08);
+    }
+
+    /* MEETING */
+    .mr-wrap {
+      background: linear-gradient(160deg, rgba(253, 248, 238, 1), rgba(245, 236, 204, 1));
+      border-radius: var(--brl);
+      border: 1.5px solid var(--border);
+      box-shadow: var(--slM);
+      overflow: hidden;
+    }
+
+    .mr-head {
+      background: linear-gradient(135deg, var(--pd), var(--sc));
+      padding: 18px 24px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .mr-head h2 {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 1.4rem;
+      letter-spacing: .06em;
+    }
+
+    .mr-head p {
+      opacity: .82;
+      font-size: .82rem;
+      margin-top: 2px;
+    }
+
+    .mr-body {
+      padding: 20px 22px;
+    }
+
+    .meeting-ctrl {
+      background: rgba(255, 255, 255, .7);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .meeting-ctrl-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .round-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(196, 150, 58, .1);
+      padding: 7px 13px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+    }
+
+    .round-badge label {
+      font-size: .82rem;
+      color: var(--ts);
+      font-weight: 600;
+    }
+
+    .rni {
+      width: 50px;
+      padding: 5px;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      text-align: center;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--pc);
+      background: rgba(255, 255, 255, .92);
+      font-family: inherit;
+    }
+
+    .rni:focus {
+      outline: none;
+      border-color: var(--pc);
+    }
+
+    .meeting-btns {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .clk-area {
+      text-align: center;
+    }
+
+    .dc {
+      font-size: 3.2rem;
+      font-weight: 700;
+      font-family: 'Ma Shan Zheng', cursive;
+      color: var(--pc);
+      line-height: 1;
+      transition: color .3s;
+    }
+
+    .dc.urgent {
+      animation: disc-urgent .6s ease-in-out infinite;
+    }
+
+    .clk-label {
+      color: var(--ts);
+      font-size: .78rem;
+      margin: 4px 0 10px;
+    }
+
+    .si {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .sib {
+      padding: 6px 12px;
+      border-radius: 9px;
+      font-size: .8rem;
+      font-weight: 700;
+      background: rgba(196, 150, 58, .08);
+      border: 1.5px solid var(--border);
+      color: var(--tp);
+    }
+
+    .sib span {
+      color: var(--pc);
+    }
+
+    .vs {
+      margin-bottom: 20px;
+    }
+
+    .vt {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--tp);
+      margin-bottom: 11px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .vote-locked-msg {
+      background: rgba(196, 150, 58, .08);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--ts);
+      font-size: .86rem;
+      text-align: center;
+    }
+
+    /* ===== JAIL VOTE BOARD ===== */
+    .jail-board-wrap {
+      background: linear-gradient(160deg, #2A1A0A, #1A0E04);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid #6A4020;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .45);
+      margin-bottom: 14px;
+      position: relative;
+    }
+
+    .jail-board-header {
+      background: linear-gradient(90deg, #8B2020, #6A1010, #8B2020);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .jail-board-title {
+      color: #FFD700;
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 1.1rem;
+      letter-spacing: .06em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .jail-spotlight {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #FFD700;
+      box-shadow: 0 0 10px #FFD700, 0 0 20px rgba(255, 215, 0, .5);
+      animation: spotlightFlash 1.5s ease-in-out infinite;
+    }
+
+    .jail-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .jail-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border-bottom: 1px solid rgba(100, 60, 20, .4);
+      position: relative;
+      overflow: hidden;
+      transition: background .2s;
+    }
+
+    .jail-row:last-child {
+      border-bottom: none;
+    }
+
+    .jail-row:hover {
+      background: rgba(196, 150, 58, .06);
+    }
+
+    .jail-rank-col {
+      width: 52px;
+      background: rgba(0, 0, 0, .3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 4px;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(100, 60, 20, .4);
+    }
+
+    .jail-rank-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .jail-rank-num {
+      font-size: .8rem;
+      font-weight: 700;
+      color: #A0A0A0;
+      font-family: monospace;
+    }
+
+    .jail-bars {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 52px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .jail-bar-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(120, 80, 40, .55);
+      animation: barsDrop .4s ease forwards;
+    }
+
+    .jail-bar-line:nth-child(1) {
+      left: 10px;
+      animation-delay: .05s;
+    }
+
+    .jail-bar-line:nth-child(2) {
+      left: 20px;
+      animation-delay: .1s;
+    }
+
+    .jail-bar-line:nth-child(3) {
+      left: 30px;
+      animation-delay: .15s;
+    }
+
+    .jail-bar-line:nth-child(4) {
+      left: 40px;
+      animation-delay: .2s;
+    }
+
+    .jail-name-col {
+      flex: 1;
+      padding: 10px 12px;
+      color: #F5DEB3;
+      font-weight: 700;
+      font-size: .88rem;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    .jail-name-col .jail-sub {
+      font-size: .7rem;
+      color: #8A7060;
+      font-weight: 400;
+      margin-top: 1px;
+    }
+
+    .jail-meter-col {
+      flex: 2;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .jail-meter-track {
+      flex: 1;
+      height: 12px;
+      background: rgba(0, 0, 0, .4);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(100, 60, 20, .5);
+    }
+
+    .jail-meter-fill {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #8B2020, #D04040, #FF6060);
+      transition: width .5s cubic-bezier(.4, 0, .2, 1);
+      position: relative;
+    }
+
+    .jail-meter-fill::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40%;
+      background: rgba(255, 255, 255, .15);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .jail-votes-col {
+      width: 52px;
+      text-align: center;
+      padding: 10px 4px;
+      flex-shrink: 0;
+    }
+
+    .jail-vote-num {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #FFD700;
+      font-family: 'Ma Shan Zheng', cursive;
+    }
+
+    .jail-vote-label {
+      font-size: .65rem;
+      color: #8A7060;
+    }
+
+    /* Below-jail vote input area */
+    .cl2 {
+      display: grid;
+      gap: 8px;
+    }
+
+    .cr {
+      background: rgba(255, 255, 255, .85);
+      border-radius: 10px;
+      padding: 10px 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1.5px solid var(--border);
+    }
+
+    .cn {
+      flex: 1;
+      font-weight: 600;
+      color: var(--tp);
+      font-size: .86rem;
+    }
+
+    /* FIX 3: Progress bar for vote rows */
+    .vbw {
+      flex: 2;
+      position: relative;
+      height: 16px;
+      background: rgba(196, 150, 58, .08);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .vbf {
+      height: 100%;
+      background: linear-gradient(90deg, var(--pc), var(--pd));
+      border-radius: 999px;
+      transition: width .4s;
+    }
+
+    .vst {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .vnum-input {
+      width: 48px;
+      padding: 4px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      text-align: center;
+      font-size: .9rem;
+      font-weight: 700;
+      color: var(--pc);
+      background: rgba(255, 255, 255, .95);
+      font-family: inherit;
+    }
+
+    .vnum-input:focus {
+      outline: none;
+      border-color: var(--pc);
+    }
+
+    .vrb {
+      margin-top: 14px;
+      padding: 13px;
+      background: rgba(208, 80, 80, .04);
+      border: 1.5px solid rgba(208, 80, 80, .16);
+      border-radius: 10px;
+      display: none;
+    }
+
+    .vrb.show {
+      display: block;
+    }
+
+    .vrb h4 {
+      color: #A03030;
+      font-weight: 700;
+      margin-bottom: 7px;
+      font-size: .88rem;
+    }
+
+    .tcc {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .tcc-chip {
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: .83rem;
+      background: rgba(208, 80, 80, .08);
+      color: #8B2020;
+      border: 1.5px solid rgba(208, 80, 80, .22);
+    }
+
+    .tcc-chip.tie {
+      background: rgba(196, 150, 58, .1);
+      color: #7A5A18;
+      border-color: rgba(196, 150, 58, .35);
+    }
+
+    .pk-section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(208, 80, 80, .15);
+      display: none;
+    }
+
+    .pk-section.show {
+      display: block;
+    }
+
+    .pk-section h5 {
+      font-size: .86rem;
+      font-weight: 700;
+      color: #B03030;
+      margin-bottom: 8px;
+    }
+
+    .pk-skip-section {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, .7);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .pk-skip-section h5 {
+      font-size: .84rem;
+      font-weight: 700;
+      color: var(--ts);
+      margin-bottom: 8px;
+    }
+
+    .chb {
+      background: rgba(180, 150, 220, .06);
+      border: 1.5px solid rgba(180, 150, 220, .22);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .chb h4 {
+      color: #6A3A8A;
+      font-size: .88rem;
+      font-weight: 700;
+      margin-bottom: 9px;
+    }
+
+    .cpl {
+      font-size: .8rem;
+      color: var(--ts);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .cpg {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+      gap: 6px;
+      max-height: 170px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding: 2px;
+    }
+
+    .cpc {
+      background: rgba(255, 255, 255, .9);
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      padding: 7px 5px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .16s;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--tp);
+    }
+
+    .cpc:hover {
+      border-color: var(--pc);
+      transform: translateY(-2px);
+    }
+
+    .cpc.sel-s {
+      border-color: var(--lotus);
+      background: rgba(200, 122, 160, .1);
+      color: #6A3A78;
+    }
+
+    .cpc.sel-a {
+      border-color: var(--rust);
+      background: rgba(160, 82, 45, .1);
+      color: var(--rust);
+    }
+
+    .ans {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media(max-width:560px) {
+      .ans {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .anb2 {
+      background: rgba(255, 255, 255, .7);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .anb2 h5 {
+      font-size: .86rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .anb2 h5.dt {
+      color: #A03030;
+    }
+
+    .anb2 h5.rt {
+      color: #3A7A50;
+    }
+
+    .anp {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+      gap: 5px;
+      max-height: 160px;
+      overflow-y: auto;
+      padding: 2px;
+    }
+
+    .anc {
+      background: rgba(255, 255, 255, .95);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 5px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .16px;
+      font-size: .76rem;
+      font-weight: 600;
+      color: var(--tp);
+    }
+
+    .anc:hover {
+      border-color: var(--pc);
+      transform: translateY(-2px);
+    }
+
+    .anc.es {
+      border-color: #ccc;
+      color: #999;
+      background: rgba(200, 200, 200, .08);
+      cursor: not-allowed;
+    }
+
+    .anc.es:hover {
+      transform: none;
+      border-color: #ccc;
+    }
+
+    .anc.se {
+      border-color: var(--erc);
+      background: rgba(208, 80, 80, .08);
+      color: #A03030;
+    }
+
+    .anc.sr2 {
+      border-color: var(--jade);
+      background: rgba(90, 158, 106, .1);
+      color: #3A7A50;
+    }
+
+    .ana {
+      margin-top: 9px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* MUSIC */
+    .music-panel {
+      background: rgba(255, 255, 255, .88);
+      border-radius: var(--brl);
+      border: 1.5px solid var(--border);
+      padding: 16px 20px;
+      margin-bottom: 14px;
+      box-shadow: var(--slA);
+    }
+
+    .music-panel h4 {
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--tp);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .music-panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .music-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    .mbtn {
+      padding: 10px 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .9);
+      cursor: pointer;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--tp);
+      transition: all .18s;
+      text-align: center;
+      font-family: inherit;
+    }
+
+    .mbtn:hover {
+      border-color: var(--pc);
+      transform: translateY(-2px);
+    }
+
+    .mbtn.active {
+      border-color: var(--pc);
+      background: rgba(196, 150, 58, .1);
+      color: var(--pd);
+    }
+
+    .mbtn .mico {
+      font-size: 1.2rem;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .vol-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .vol-row label {
+      font-size: .8rem;
+      color: var(--ts);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 110px;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(196, 150, 58, .2);
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--pc);
+      cursor: pointer;
+    }
+
+    .end-game-section {
+      background: linear-gradient(135deg, rgba(208, 112, 32, .06), rgba(196, 150, 58, .06));
+      border: 1.5px solid rgba(196, 150, 58, .28);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 16px;
+    }
+
+    .end-game-section h4 {
+      color: #A06020;
+      font-size: .88rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* MODALS */
+    .mo {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 14, 6, .52);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity .22s;
+    }
+
+    .mo.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .mod {
+      background: var(--bgc);
+      border-radius: var(--brl);
+      padding: 24px;
+      max-width: 460px;
+      width: 90%;
+      box-shadow: var(--slH);
+      border: 1.5px solid var(--border-strong);
+      transform: scale(.92);
+      transition: transform .22s;
+    }
+
+    .mo.show .mod {
+      transform: scale(1);
+    }
+
+    .mtitle {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--tp);
+      margin-bottom: 11px;
+      text-align: center;
+      font-family: 'Ma Shan Zheng', cursive;
+      letter-spacing: .06em;
+    }
+
+    .mcont {
+      margin-bottom: 16px;
+      text-align: center;
+      color: var(--ts);
+      font-size: .88rem;
+      line-height: 1.55;
+    }
+
+    .mact {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .rsg {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
+      gap: 7px;
+      margin: 11px 0;
+    }
+
+    .rsb {
+      padding: 11px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .9);
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--tp);
+      font-family: inherit;
+    }
+
+    .rsb:hover {
+      transform: translateY(-2px);
+      border-color: var(--pc);
+      box-shadow: var(--slA);
+    }
+
+    .mod.smod {
+      border-color: var(--jade);
+    }
+
+    .mod.fmod {
+      border-color: var(--erc);
+    }
+
+    .ri2c {
+      font-size: 3rem;
+      margin-bottom: 7px;
+    }
+
+    .rm2 {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--tp);
+      margin-bottom: 5px;
+    }
+
+    .rs2 {
+      font-size: .84rem;
+      color: var(--ts);
+      white-space: pre-line;
+    }
+
+    .win-mod {
+      max-width: 500px;
+    }
+
+    .win-ic {
+      font-size: 3.8rem;
+      margin-bottom: 11px;
+    }
+
+    .win-ti {
+      font-size: 1.7rem;
+      font-weight: 700;
+      font-family: 'Ma Shan Zheng', cursive;
+      margin-bottom: 7px;
+      color: var(--pc);
+    }
+
+    /* LOG */
+    .el2 {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding-right: 3px;
+    }
+
+    .el2::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .el2::-webkit-scrollbar-thumb {
+      background: rgba(196, 150, 58, .25);
+      border-radius: 4px;
+    }
+
+    .le {
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: .8rem;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-left: 3px solid transparent;
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .le.task {
+      border-color: var(--pc);
+    }
+
+    .le.deduct {
+      border-color: var(--erc);
+    }
+
+    .le.sabotage {
+      border-color: #D05050;
+      background: rgba(208, 80, 80, .05);
+    }
+
+    .le.eliminate {
+      border-color: var(--erc);
+    }
+
+    .le.resurrect {
+      border-color: var(--jade);
+    }
+
+    .le.system {
+      border-color: var(--sky);
+    }
+
+    .lt {
+      color: var(--tl);
+      font-size: .74rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* MUSIC BTN */
+    .music-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--pc), var(--pd));
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(156, 112, 32, .35);
+      z-index: 500;
+      transition: all .2s;
+    }
+
+    .music-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 24px rgba(156, 112, 32, .45);
+    }
+
+    /* FIREWORKS */
+    .fwov {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9998;
+      overflow: hidden;
+    }
+
+    .cfp {
+      position: absolute;
+      border-radius: 2px;
+      animation: confettiFall linear forwards;
+    }
+
+    .fwb {
+      position: absolute;
+      border-radius: 50%;
+      animation: fw .8s ease-out forwards;
+    }
+
+    .sec-head {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--tp);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    .sec-head::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: var(--pc);
+      border-radius: 2px;
+    }
+
+    .ornament {
+      text-align: center;
+      color: var(--border-strong);
+      font-size: .8rem;
+      letter-spacing: .4em;
+      margin: 6px 0;
+      opacity: .6;
+      font-family: 'Noto Serif SC', serif;
+    }
+
+    /* NEW GAME */
+    .newgame-warning {
+      background: rgba(74, 122, 90, .06);
+      border: 1.5px solid rgba(74, 122, 90, .25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 10px 0 14px;
+      font-size: .82rem;
+      color: #2E5A3A;
+      line-height: 1.6;
+    }
+
+    .newgame-warning strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: .88rem;
+    }
+
+    /* ROOM SYSTEM */
+    .room-info-box {
+      background: rgba(196, 150, 58, .08);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .room-info-box .room-code {
+      font-family: monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--pc);
+      letter-spacing: 8px;
+      text-align: center;
+      margin: 8px 0;
+    }
+
+    .room-info-box p {
+      font-size: .8rem;
+      color: var(--ts);
+      text-align: center;
+    }
+
+    .join-input-big {
+      width: 100%;
+      padding: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 8px;
+      font-family: monospace;
+      background: rgba(255, 255, 255, .95);
+      color: var(--tp);
+    }
+
+    .join-input-big:focus {
+      outline: none;
+      border-color: var(--pc);
+    }
+
+    /* PK alert modal */
+    .pk-alert-mod {
+      border-color: #D05050;
+      background: linear-gradient(135deg, rgba(253, 248, 238, 1), rgba(255, 240, 240, 1));
+    }
+
+    .pk-alert-icon {
+      font-size: 2.6rem;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .pk-round-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #D05050, #A03030);
+      color: #fff;
+      font-size: .82rem;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    /* Sabotage confirm preview */
+    .sab-preview-box {
+      background: rgba(255, 255, 255, .85);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 10px;
+      font-size: .84rem;
+      color: var(--tp);
+      text-align: left;
+    }
+
+    .sab-preview-box strong {
+      color: var(--erc);
+    }
+
+    @media(max-width:768px) {
+      .mc {
+        padding: 10px;
+      }
+
+      .pg {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 6px;
+      }
+
+      .sg {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media(max-width:480px) {
+      .pg {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .ans {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ROOM HISTORY */
+    .rh-title {
+      font-size: 0.85rem;
+      color: var(--ts);
+      margin-top: 14px;
+      margin-bottom: 6px;
+    }
+
+    .history-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .rh-btn {
+      background: rgba(196, 150, 58, .08);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      color: var(--tp);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+
+    .rh-btn:hover {
+      background: var(--pc);
+      color: #fff;
+      border-color: var(--pd);
+      transform: scale(1.05);
+    }
+
+    .rh-empty {
+      font-size: 0.8rem;
+      color: #aaa;
+      font-style: italic;
+    }
+  </style>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body>
+  <div class="fa-wrap" id="faw"></div>
+
+  <div class="sync-bar">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-status">离线中</span>
+    <span style="font-size:.76rem;">房间：</span><span class="sync-id" id="room-id-display">—</span>
+    <div class="sync-btns">
+      <!-- FIX 4: Join room button stays, leave button stays; no bell/approval -->
+      <button class="btn bp sm" id="join-room-btn">🔗 加入房间</button>
+      <button class="btn bleave sm" id="leave-room-btn" style="display:none;">🚪 退出房间</button>
+      <button class="btn bnew sm" id="new-game-btn">🌅 新游戏</button>
+      <!-- FIX 5: Auto-save badge replaces save button -->
+      <div class="autosave-badge" id="autosave-badge">
+        <div class="autosave-dot" id="autosave-dot"></div>
+        <span id="autosave-label">自动保存</span>
+      </div>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <h1 class="mt">《鹅鸭杀：大厅潜行版》工委控制台</h1>
+    <p class="sub-title">道场修行 · 任务积分 · 魔障潜伏 · 善恶轮回</p>
+  </header>
+
+  <div class="mc">
+
+    <div class="sb" id="sab-banner">
+      <div class="sbt">
+        <div>
+          <h3>⚠️ 临时任务紧急触发！</h3>
+          <p id="sab-desc-disp">魔罗鸭发动破坏！</p>
+        </div>
+        <div class="stimer" id="sab-timer">2:00</div>
+      </div>
+      <div class="sba">
+        <button class="btn bsc sm" id="sab-ok">✅ 任务完成</button>
+        <button class="btn bd sm" id="sab-fail">💀 时间到！执行惩罚</button>
+      </div>
+    </div>
+
+    <div class="tw">
+      <div class="tbar">
+        <button class="tbtn active" data-tab="dash">📊 总览</button>
+        <button class="tbtn" data-tab="setup">⚙️ 游戏配置</button>
+        <button class="tbtn" data-tab="players">🏮 修行者</button>
+        <button class="tbtn" data-tab="meeting">🏛️ 大本营</button>
+        <button class="tbtn" data-tab="sab">🦆 破坏</button>
+        <button class="tbtn" data-tab="music">🎵 音乐</button>
+        <button class="tbtn" data-tab="log">📋 日志</button>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="tc active ti" id="tab-dash">
+        <div style="margin-bottom:16px;">
+          <div
+            style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;gap:5px;">
+            <span class="sec-head">全场任务总进度</span>
+            <span style="color:var(--ts);font-size:.84rem;">目标：<strong id="tgt-label"
+                style="color:var(--pc);">80</strong> 个</span>
+          </div>
+          <div class="pbw">
+            <div class="pbf" id="pb-fill" style="width:0%"></div><span class="pbl" id="pb-label">0 / 80</span>
+          </div>
+        </div>
+        <div class="wb">
+          <div class="wbd wg">🪿 任务满 <span id="wc-task">80</span> 个 或 淘汰全鸭 → 鹅胜</div>
+          <div class="wbd wdk">🦆 存活者 ≤ 鸭子数 → 鸭胜</div>
+        </div>
+        <hr class="sdiv">
+        <div class="sg">
+          <div class="sc2">
+            <div class="sn" id="s-total">0</div>
+            <div class="sl">修行者 🧘</div>
+          </div>
+          <div class="sc2">
+            <div class="sn" id="s-alive">0</div>
+            <div class="sl">存活 💫</div>
+          </div>
+          <div class="sc2">
+            <div class="sn" id="s-tasks">0</div>
+            <div class="sl">已完成任务 ✅</div>
+          </div>
+          <div class="sc2">
+            <div class="sn" id="s-goose">0</div>
+            <div class="sl">普信鹅 🪿</div>
+          </div>
+          <div class="sc2">
+            <div class="sn" id="s-det">0</div>
+            <div class="sl">法师鹅 🔍</div>
+          </div>
+          <div class="sc2">
+            <div class="sn" id="s-sher">0</div>
+            <div class="sl">护法鹅 👮</div>
+          </div>
+          <div class="sc2">
+            <div class="sn" id="s-duck">0</div>
+            <div class="sl">魔罗鸭 🦆</div>
+          </div>
+          <div class="sc2 clickable" id="sc-pig">
+            <div class="sn" id="s-pig">0</div>
+            <div class="sl" id="sl-pig">秘密 🔒</div>
+          </div>
+          <div class="sc2 clickable" id="sc-dodo">
+            <div class="sn" id="s-dodo">0</div>
+            <div class="sl" id="sl-dodo">秘密 🔒</div>
+          </div>
+          <div class="sc2">
+            <div class="sn" id="s-sab-c">0</div>
+            <div class="sl">临时任务守护成功 🚨</div>
+          </div>
+        </div>
+        <hr class="sdiv">
+        <div class="sec-head">快速任务操作</div>
+        <div class="mrow"><label>➕ 全场各加：</label><input type="number" class="ni" id="bulk-n" value="1" min="1"
+            max="50"><span style="color:var(--ts);font-size:.84rem;">个任务</span><button class="btn bp sm"
+            id="bulk-add">全场 +任务</button></div>
+        <div class="mrow"><label>🎯 任务目标：</label><input type="number" class="ni" id="tgt-input" value="80" min="10"
+            max="999"><button class="btn bo sm" id="tgt-set">设定</button></div>
+        <div class="end-game-section">
+          <h4>🏆 游戏结束</h4>
+          <p style="font-size:.8rem;color:var(--ts);margin-bottom:10px;">游戏已分出胜负？点击宣布结果并触发胜利特效！</p>
+          <button class="btn btrophy" id="end-game-btn">🏆 宣布游戏结束</button>
+        </div>
+      </div>
+
+      <!-- SETUP (3-step) -->
+      <div class="tc ti" id="tab-setup">
+        <div class="setup-steps">
+          <button class="setup-step-btn active" id="step1-btn" data-step="1">
+            <span class="setup-step-num">1</span>
+            <span>队伍配置</span>
+          </button>
+          <button class="setup-step-btn" id="step2-btn" data-step="2" disabled>
+            <span class="setup-step-num">2</span>
+            <span>角色数量</span>
+          </button>
+          <button class="setup-step-btn" id="step3-btn" data-step="3" disabled>
+            <span class="setup-step-num">3</span>
+            <span>分配身份</span>
+          </button>
+        </div>
+
+        <div class="step-panel active" id="step-panel-1">
+          <div class="sec-head">队伍配置</div>
+          <div class="team-config-list" id="team-config-list"></div>
+          <button class="add-team-btn" id="add-team-btn">＋ 添加新队伍</button>
+          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+            <button class="btn bp" id="upd-teams">🔄 应用队伍配置并进入下一步 →</button>
+          </div>
+          <p style="font-size:.78rem;color:var(--ts);margin-top:8px;">填写好每个队伍的人数后，点击上方按钮进入角色配置。</p>
+        </div>
+
+        <div class="step-panel" id="step-panel-2">
+          <div class="sec-head">角色数量配置</div>
+          <div class="rl">
+            <div class="ri">
+              <div class="rii">
+                <div class="ricn">🪿</div>
+                <div>
+                  <div class="rnm">普信鹅</div>
+                  <div class="rd">完成任务盖章，达目标或淘汰全鸭获胜</div>
+                </div>
+              </div><input type="number" id="cnt-goose" class="ri2" min="0" max="60" value="0">
+            </div>
+            <div class="ri">
+              <div class="rii">
+                <div class="ricn">🔍</div>
+                <div>
+                  <div class="rnm">法师鹅（侦探）</div>
+                  <div class="rd">每轮可向工委查验一人身份（好/坏）</div>
+                </div>
+              </div><input type="number" id="cnt-det" class="ri2" min="0" max="60" value="0">
+            </div>
+            <div class="ri">
+              <div class="rii">
+                <div class="ricn">👮</div>
+                <div>
+                  <div class="rnm">护法鹅（警长）</div>
+                  <div class="rd">会议中可发起挑战，猜对鸭死，猜错自死</div>
+                </div>
+              </div><input type="number" id="cnt-sher" class="ri2" min="0" max="60" value="0">
+            </div>
+            <div class="ri">
+              <div class="rii">
+                <div class="ricn">🦆</div>
+                <div>
+                  <div class="rnm">魔罗鸭（杀手）</div>
+                  <div class="rd">暗杀鹅，存活者≤鸭子数量获胜</div>
+                </div>
+              </div><input type="number" id="cnt-duck" class="ri2" min="0" max="60" value="0">
+            </div>
+            <div class="ri nr">
+              <div class="rii">
+                <div class="ricn">🕊️</div>
+                <div>
+                  <div class="rnm">轮回鸽（中立）</div>
+                  <div class="rd">连续赢剪刀石头布三次 + 收集10个信物获胜</div>
+                </div>
+              </div><input type="number" id="cnt-pig" class="ri2" min="0" max="60" value="0">
+            </div>
+            <div class="ri nr">
+              <div class="rii">
+                <div class="ricn">🦤</div>
+                <div>
+                  <div class="rnm">痴迷鸽（中立）</div>
+                  <div class="rd">连续赢剪刀石头布三次，或被投票出局获胜</div>
+                </div>
+              </div><input type="number" id="cnt-dodo" class="ri2" min="0" max="60" value="0">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+            <button class="btn bo sm" id="show-neutral">我是这局游戏的秘密</button>
+            <button class="btn bo sm" id="hide-neutral" style="display:none;">🙈 隐藏中立角色</button>
+            <button class="btn bo sm" id="back-to-step1">← 返回队伍配置</button>
+            <button class="btn bp" id="go-to-step3">下一步：分配身份 →</button>
+          </div>
+          <div id="role-count-note" style="font-size:.8rem;color:var(--ts);margin-top:10px;"></div>
+        </div>
+
+        <div class="step-panel" id="step-panel-3">
+          <div class="sec-head">分配身份</div>
+          <div
+            style="background:rgba(196,150,58,.06);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;font-size:.84rem;color:var(--ts);">
+            修行者总数：<strong id="step3-total" style="color:var(--pc);">0</strong> 人 &nbsp;|&nbsp; 已配置角色：<strong
+              id="step3-roles" style="color:var(--pc);">0</strong> 个
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+            <button class="btn bp" id="assign-roles">🎲 随机分配身份</button>
+            <button class="btn bs" id="manual-toggle">✋ 手动配置身份</button>
+            <button class="btn bo sm" id="back-to-step2">← 返回角色配置</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAYERS -->
+      <div class="tc ti" id="tab-players">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn bo sm" id="show-roles">👁️ 显示所有身份</button>
+          <button class="btn bo sm" id="hide-roles">🙈 隐藏所有身份</button>
+        </div>
+        <div id="teams-container"></div>
+      </div>
+
+      <!-- MEETING -->
+      <div class="tc" id="tab-meeting">
+        <div class="mr-wrap">
+          <div class="mr-head">
+            <div>
+              <h2>🏛️ 大本营 · 议事厅</h2>
+              <p>发现尸体后，所有人回到此处开始讨论与投票</p>
+            </div>
+          </div>
+          <div class="mr-body">
+            <div class="meeting-ctrl">
+              <div class="meeting-ctrl-top">
+                <div class="round-badge">
+                  <label>第</label>
+                  <input type="number" class="rni" id="m-round-input" value="1" min="1" max="999">
+                  <label>轮</label>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <label style="font-size:.8rem;color:var(--ts);font-weight:600;">时长(分)：</label>
+                  <input type="number" class="ni" id="disc-min" value="3" min="1" max="30">
+                </div>
+                <div class="meeting-btns">
+                  <button class="btn bw" id="new-meeting">🔔 开始会议</button>
+                  <button class="btn bd sm" id="end-meeting" style="display:none;">🏁 结束会议</button>
+                  <button class="btn bo sm" id="disc-pause">⏸ 暂停</button>
+                  <button class="btn bs sm" id="disc-reset">↩ 重置</button>
+                </div>
+              </div>
+              <div class="clk-area">
+                <div class="dc" id="disc-clk">3:00</div>
+                <div class="clk-label">讨论倒计时（点击「开始会议」自动开启）</div>
+              </div>
+            </div>
+
+            <div class="si">
+              <div class="sib">存活：<span id="m-alive">0</span> 人</div>
+              <div class="sib">鹅阵营：<span id="m-geese">0</span> 人</div>
+              <div class="sib">鸭子：<span id="m-ducks">0</span> 只</div>
+              <div class="sib">已出局：<span id="m-elim">0</span> 人</div>
+            </div>
+
+            <div class="vs">
+              <div class="vt">🗳️ 投票计票板 <span style="font-size:.76rem;font-weight:400;color:var(--ts);"
+                  id="vote-subtitle">（请先开始会议再投票）</span></div>
+              <div id="vote-board-area">
+                <div class="vote-locked-msg" id="vote-locked-msg">⏳ 会议尚未开始，投票板已锁定。</div>
+                <div id="top5-section" style="display:none;">
+                  <div class="jail-board-wrap" id="jail-board-wrap">
+                    <div class="jail-board-header">
+                      <div class="jail-board-title">
+                        <span>🔒</span>
+                        <span>监牢候选 · 实时票数</span>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <div class="jail-spotlight"></div>
+                        <span style="color:#FFD700;font-size:.76rem;font-weight:600;">前五名</span>
+                      </div>
+                    </div>
+                    <div class="jail-list" id="jail-list"></div>
+                  </div>
+                  <div class="cl2" id="cand-list" style="margin-top:10px;"></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                <button class="btn bo sm" id="reset-votes">🔄 清空票数</button>
+              </div>
+              <div class="vrb" id="vote-rb">
+                <h4>📊 本轮投票结果</h4>
+                <div class="tcc" id="top-cands"></div>
+                <div class="pk-section" id="pk-section">
+                  <h5 id="pk-section-title">🔁 加赛投票进行中</h5>
+                  <p style="font-size:.78rem;color:var(--ts);margin-bottom:8px;" id="pk-context-msg">以下玩家进入加赛：</p>
+                  <div class="cl2" id="pk-cand-list"></div>
+                  <div class="pk-skip-section">
+                    <h5>⚠️ 玩家放弃投票？</h5>
+                    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+                      <button class="btn bo sm" id="pk-skip-btn">🚫 玩家放弃本轮加赛</button>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                    <button class="btn bd sm" id="pk-confirm-btn">⚔️ 确认淘汰</button>
+                    <button class="btn bo sm" id="pk-reset-btn">🔄 清空票数</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chb">
+              <h4>⚔️ 护法鹅发起挑战</h4>
+              <p style="font-size:.78rem;color:var(--ts);margin-bottom:11px;">选择护法鹅（紫框）和被指认者（橙框），点击「验证」判断结果。</p>
+              <div class="cpl">① 选择护法鹅：</div>
+              <div class="cpg" id="sher-picker"></div>
+              <div class="cpl">② 选择被指认者：</div>
+              <div class="cpg" id="acc-picker"></div>
+              <button class="btn bpu sm" id="verify-btn">🔮 验证</button>
+            </div>
+
+            <div>
+              <div class="sec-head" style="margin-bottom:10px;">宣布往生 / 重生</div>
+              <div class="ans">
+                <div class="anb2">
+                  <h5 class="dt">💀 宣布往生</h5>
+                  <div class="anp" id="ann-elim-picker"></div>
+                  <div class="ana"><button class="btn bd sm" id="ann-elim-btn">💀 确认往生</button></div>
+                </div>
+                <div class="anb2">
+                  <h5 class="rt">✨ 宣布重生</h5>
+                  <div class="anp" id="ann-res-picker"></div>
+                  <div class="ana"><button class="btn bsc sm" id="ann-res-btn">✨ 确认重生</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SABOTAGE -->
+      <div class="tc ti" id="tab-sab">
+        <div class="sbox">
+          <h4>🚨 触发临时任务</h4>
+          <div class="mrow" style="margin-bottom:9px;">
+            <label>任务描述：</label>
+            <input type="text" id="sab-desc" class="ti2" placeholder="例：大殿灯火熄灭，需10人前往指定点扶正蜡烛">
+          </div>
+          <div class="mrow">
+            <label>倒计时（秒）：</label>
+            <input type="number" class="ni" id="sab-dur" value="120" min="30" max="600">
+            <button class="btn bd" id="trig-sab">🚨 触发破坏</button>
+          </div>
+        </div>
+        <div class="sbox">
+          <h4>💀 失败惩罚配置</h4>
+          <div class="mrow" style="margin-bottom:9px;">
+            <label>扣除任务：</label><input type="number" class="ni" id="sd-pct" value="10" min="1" max="100">
+            <span style="color:var(--ts);font-size:.84rem;">%</span>
+            <button class="btn bd sm" id="sd-btn">⬇️ 直接扣除进度</button>
+          </div>
+          <div class="mrow">
+            <label>随机暴毙：</label><input type="number" class="ni" id="sk-n" value="2" min="1" max="10">
+            <span style="color:var(--ts);font-size:.84rem;">名鹅</span>
+            <button class="btn bd sm" id="sk-btn">☠️ 直接执行暴毙</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MUSIC -->
+      <div class="tc ti" id="tab-music">
+        <div class="music-panel">
+          <div class="music-panel-top">
+            <h4 style="margin-bottom:0;">🎵 背景音乐</h4>
+            <button class="btn bd sm" id="bgm-stop-btn">⏹ 关闭音乐</button>
+          </div>
+          <div class="ornament">— · —</div>
+          <div class="music-grid" id="music-grid"></div>
+          <div class="vol-row">
+            <label>🔊 音量：</label>
+            <input type="range" id="bgm-vol" min="0" max="100" value="35">
+            <span id="bgm-vol-label" style="font-size:.8rem;color:var(--ts);min-width:32px;">35%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOG -->
+      <div class="tc ti" id="tab-log">
+        <div
+          style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;flex-wrap:wrap;gap:6px;">
+          <div class="sec-head" style="margin-bottom:0;">事件日志</div>
+          <button class="btn bo sm" id="clr-log">🗑️ 清除</button>
+        </div>
+        <div class="el2" id="ev-log">
+          <div class="le system"><span>🏮</span><span class="lt" id="init-t">--:--</span><span>控制台启动…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="music-btn" id="music-btn" title="静音/取消静音">🎵</button>
+
+  <!-- Action Menu -->
+  <div class="am-backdrop" id="am-backdrop"></div>
+  <div class="am" id="act-menu">
+    <div class="amname" id="am-pname">玩家</div>
+    <button class="ab ta" id="am-add">✅ +1 完成任务</button>
+    <button class="ab ts" id="am-sub">❌ -1 任务</button>
+    <button class="ab el" id="am-elim">💀 往生</button>
+    <button class="ab re" id="am-res" style="display:none;">✨ 重生</button>
+    <button class="ab ro" id="am-role">🎭 设定身份</button>
+    <button class="ab cl" id="am-close">✕ 关闭</button>
+  </div>
+
+  <!-- Role modal -->
+  <div class="mo" id="mod-role">
+    <div class="mod">
+      <div class="mtitle">选择身份</div>
+      <div class="mcont">
+        <div class="rsg"><button class="rsb" data-role="goose"><span
+              style="font-size:1.3rem;">🪿</span>普信鹅</button><button class="rsb" data-role="detective"><span
+              style="font-size:1.3rem;">🔍</span>法师鹅</button><button class="rsb" data-role="sheriff"><span
+              style="font-size:1.3rem;">👮</span>护法鹅</button><button class="rsb" data-role="duck"><span
+              style="font-size:1.3rem;">🦆</span>魔罗鸭</button><button class="rsb" data-role="pigeon"><span
+              style="font-size:1.3rem;">🕊️</span>轮回鸽</button><button class="rsb" data-role="dodo"><span
+              style="font-size:1.3rem;">🦤</span>痴迷鸽</button><button class="rsb" data-role=""><span
+              style="font-size:1.3rem;">❌</span>无身份</button></div>
+      </div>
+      <div class="mact"><button class="btn bo" id="role-cancel">取消</button></div>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div class="mo" id="mod-c1">
+    <div class="mod">
+      <div class="mtitle">确认操作</div>
+      <div class="mcont" id="c1-msg">确定？</div>
+      <div class="mact"><button class="btn bo" id="c1-no">取消</button><button class="btn bp" id="c1-yes">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW GAME -->
+  <div class="mo" id="mod-newgame">
+    <div class="mod">
+      <div class="mtitle">🌅 开始新游戏</div>
+      <div class="mcont">
+        <div class="newgame-warning">
+          <strong>⚠️ 以下内容将全部清空：</strong>
+          队伍配置 · 角色数量 · 所有玩家数据 · 任务进度 · 身份分配 · 往生/重生状态 · 投票记录 · 会议轮次 · 临时任务记录 · 事件日志
+        </div>
+        一切都会回到初始状态，重新开始。
+      </div>
+      <div class="mact">
+        <button class="btn bo" id="ng-cancel">取消</button>
+        <button class="btn bnew" id="ng-confirm1">确认重置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIX 4: JOIN ROOM modal - direct join, no approval needed -->
+  <div class="mo" id="mod-join">
+    <div class="mod">
+      <div class="mtitle">🔗 加入他人房间</div>
+      <div class="mcont">
+        <div class="room-info-box">
+          <p style="margin-bottom:4px;">📋 我的房间号（分享给队友）</p>
+          <div class="room-code" id="my-room-code-display">——</div>
+          <p>队友输入此号码即可直接加入</p>
+        </div>
+        <p style="margin-bottom:8px;">或输入他人房间号加入：</p>
+      </div>
+      <input class="join-input-big" type="text" id="join-room-input" maxlength="6" placeholder="000000">
+      <div class="rh-title">🕒 最近加入的房间：</div>
+      <div class="history-list" id="join-history-list">
+        <div class="rh-empty">暂无历史记录</div>
+      </div>
+      <div class="mact" style="margin-top:14px;">
+        <button class="btn bo" id="join-cancel">取消</button>
+        <button class="btn bp" id="join-confirm">🚀 直接加入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leave room confirmation -->
+  <div class="mo" id="mod-leave-room">
+    <div class="mod">
+      <div class="mtitle">🚪 退出房间</div>
+      <div class="mcont">确定要退出当前房间吗？<br>退出后将进入离线模式。</div>
+      <div class="mact">
+        <button class="btn bo" id="leave-cancel">取消</button>
+        <button class="btn bleave" id="leave-confirm">确定退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result modal -->
+  <div class="mo" id="mod-result">
+    <div class="mod" id="res-mod-inner">
+      <div style="text-align:center;">
+        <div class="ri2c" id="res-icon">✅</div>
+        <div class="rm2" id="res-msg">结果</div>
+        <div class="rs2" id="res-sub"></div>
+      </div>
+      <div class="mact" style="margin-top:14px;"><button class="btn bp" id="result-ok">确认</button></div>
+    </div>
+  </div>
+
+  <!-- Win modal -->
+  <div class="mo" id="mod-win">
+    <div class="mod win-mod">
+      <div style="text-align:center;">
+        <div class="win-ic" id="win-icon">🏆</div>
+        <div class="win-ti" id="win-title">游戏结束！</div>
+        <div class="mcont" id="win-msg">恭喜！</div>
+      </div>
+      <div class="mact"><button class="btn bp" id="win-ok">🎊 好的！</button></div>
+    </div>
+  </div>
+
+  <!-- End game modals -->
+  <div class="mo" id="mod-eg-confirm">
+    <div class="mod">
+      <div class="mtitle">🏆 宣布游戏结束</div>
+      <div class="mcont">确定要宣布游戏结束吗？<br><span style="font-size:.8rem;color:var(--ts);">将触发胜利特效</span></div>
+      <div class="mact"><button class="btn bo" id="egc-no">取消</button><button class="btn btrophy" id="egc-yes">确认结束
+          🏆</button></div>
+    </div>
+  </div>
+  <div class="mo" id="mod-eg-pick">
+    <div class="mod">
+      <div class="mtitle">选择获胜阵营</div>
+      <div class="mcont">哪个阵营获胜？</div>
+      <div class="rsg" style="grid-template-columns:repeat(3,1fr);"><button class="rsb" id="win-goose"><span
+            style="font-size:1.5rem;">🪿</span>鹅阵营胜</button><button class="rsb" id="win-duck"><span
+            style="font-size:1.5rem;">🦆</span>鸭阵营胜</button><button class="rsb" id="win-pigeon"><span
+            style="font-size:1.5rem;">🕊️</span>鸽阵营胜</button></div>
+      <div class="mact"><button class="btn bo" id="eg-cancel">取消</button></div>
+    </div>
+  </div>
+
+  <!-- PK Alert Modal -->
+  <div class="mo" id="mod-pk-alert">
+    <div class="mod pk-alert-mod" style="max-width:420px;">
+      <div style="text-align:center;">
+        <div class="pk-alert-icon">⚔️</div>
+        <div class="pk-round-badge" id="pk-round-badge">加赛</div>
+        <div class="mtitle" style="margin-top:8px;" id="pk-alert-title">进入加赛环节！</div>
+        <div class="mcont" id="pk-alert-context">以下玩家票数相同，需要加赛！</div>
+        <div id="pk-alert-players"
+          style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:12px;"></div>
+      </div>
+      <div class="mact"><button class="btn bd" id="pk-alert-ok">⚔️ 开始加赛！</button></div>
+    </div>
+  </div>
+
+  <!-- PK End Modal -->
+  <div class="mo" id="mod-pk-end">
+    <div class="mod" style="max-width:420px;border-color:var(--jade);">
+      <div style="text-align:center;">
+        <div style="font-size:2.6rem;margin-bottom:8px;">🏁</div>
+        <div class="mtitle" id="pk-end-title">加赛结束！</div>
+        <div class="mcont" id="pk-end-msg"></div>
+        <div id="pk-end-elim-info"
+          style="background:rgba(208,80,80,.06);border:1.5px solid rgba(208,80,80,.2);border-radius:10px;padding:12px;margin:10px 0;">
+        </div>
+      </div>
+      <div class="mact"><button class="btn bp" id="pk-end-ok">确认</button></div>
+    </div>
+  </div>
+
+  <!-- Meeting End Modal -->
+  <div class="mo" id="mod-meeting-end">
+    <div class="mod" style="max-width:420px;border-color:var(--jade);">
+      <div style="text-align:center;">
+        <div style="font-size:2.4rem;margin-bottom:8px;">🏁</div>
+        <div class="mtitle">会议结束</div>
+        <div class="mcont" id="meeting-end-msg">第 1 轮会议已结束</div>
+      </div>
+      <div class="mact"><button class="btn bsc" id="meeting-end-ok">确认</button></div>
+    </div>
+  </div>
+
+  <!-- SABOTAGE RESULT MODAL -->
+  <div class="mo" id="mod-sab-result">
+    <div class="mod" style="max-width:480px;">
+      <div style="text-align:center;">
+        <div style="font-size:2.8rem;margin-bottom:8px;" id="sab-result-icon">✅</div>
+        <div class="mtitle" id="sab-result-title">临时任务完成！</div>
+        <div class="mcont" id="sab-result-msg"></div>
+      </div>
+      <div id="sab-punish-section" style="display:none;margin-bottom:14px;">
+        <div style="font-size:.86rem;font-weight:700;color:#A03030;margin-bottom:8px;text-align:center;">
+          请选择要执行的惩罚（只能选一项）：</div>
+        <div class="sab-punish-opts">
+          <label class="sab-punish-opt" id="sab-opt-deduct">
+            <input type="radio" name="sab-punish-radio" id="sab-punish-deduct" value="deduct">
+            <div style="flex:1;">
+              <div style="font-weight:700;margin-bottom:2px;">⬇️ 扣除任务进度（<span id="sab-punish-pct-label">10</span>%）
+              </div>
+              <div id="sab-deduct-preview" style="font-size:.78rem;color:var(--ts);margin-top:2px;"></div>
+            </div>
+          </label>
+          <label class="sab-punish-opt" id="sab-opt-kill">
+            <input type="radio" name="sab-punish-radio" id="sab-punish-kill" value="kill">
+            <div style="flex:1;">
+              <div style="font-weight:700;margin-bottom:2px;">☠️ 随机暴毙（<span id="sab-punish-n-label">2</span> 名鹅）</div>
+              <div id="sab-kill-preview" style="font-size:.78rem;color:var(--ts);margin-top:2px;"></div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="mact">
+        <button class="btn bo" id="sab-punish-cancel-btn" style="display:none;">取消惩罚</button>
+        <button class="btn bd" id="sab-result-ok">确认执行</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sabotage punishment confirm modal -->
+  <div class="mo" id="mod-sab-punish-confirm">
+    <div class="mod" style="max-width:440px;border-color:var(--erc);">
+      <div style="text-align:center;">
+        <div style="font-size:2.4rem;margin-bottom:8px;">⚠️</div>
+        <div class="mtitle">确认执行惩罚</div>
+        <div class="mcont">确定要执行以下惩罚吗？</div>
+        <div id="sab-punish-preview" class="sab-preview-box"></div>
+      </div>
+      <div class="mact" style="margin-top:14px;">
+        <button class="btn bo" id="sab-punish-back">← 返回选择</button>
+        <button class="btn bd" id="sab-punish-go">确认执行 ☠️</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fwov" id="fw-ov" style="display:none;"></div>
+
+  <script>
+    // ===================== PEER ID =====================
+    let myPeerId = localStorage.getItem('gduck_peer_id');
+    if (!myPeerId) { myPeerId = Math.random().toString(36).slice(2, 10); localStorage.setItem('gduck_peer_id', myPeerId); }
+
+    let myRoomId = localStorage.getItem('gduck_my_room_id');
+    if (!myRoomId) { myRoomId = Math.floor(100000 + Math.random() * 900000).toString(); localStorage.setItem('gduck_my_room_id', myRoomId); }
+
+    // ===================== GAME STATE =====================
+    const DEFAULT_TEAMS = [
+      { name: '布施', count: 0 }, { name: '持戒', count: 0 }, { name: '忍辱', count: 0 },
+      { name: '精进', count: 0 }, { name: '禅定', count: 0 }, { name: '般若', count: 0 }
+    ];
+
+    const GS = {
+      teams: JSON.parse(JSON.stringify(DEFAULT_TEAMS)),
+      players: [], rolesVis: false, manualMode: false, curCard: null,
+      totalTasks: 0, taskTarget: 80,
+      sabTimer: null, sabSec: 0, sabSuccessCount: 0, sabAlertIv: null,
+      meetRound: 1, discTimer: null, discSec: 180, discRun: false, meetingActive: false, discPaused: false,
+      votingLocked: true,
+      pkMode: false, pkPlayers: [], pkRound: 0, pkContext: 'first',
+      meetingElimCount: 0, firstElimDone: false,
+      firstElimPlayer: null, // track first eliminated player
+      pigReveal: false, dodoReveal: false,
+      selSher: null, selAcc: null, selAnnE: null, selAnnR: null,
+      audioCtx: null, muted: false, bgNodes: [], bgScheduled: false,
+      bgVolume: 0.35, sfxVolume: 0.65,
+      currentBGM: 'teahouse', bgmStopped: false, isMeetingBGM: false,
+      meetingBGMNodes: [], meetingBGMRunning: false,
+      roomId: null, isHost: false, joinedRoom: null,
+      meetingOverAlert: false, meetingOverAlertIv: null,
+      currentStep: 1,
+      sabPunishKillList: [],
+    };
+
+    // ===================== FIX 5: AUTO-SAVE =====================
+    let autoSaveTimeout = null;
+    function triggerAutoSave() {
+      if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+      const dot = d('autosave-dot');
+      if (dot) dot.classList.add('saving');
+      autoSaveTimeout = setTimeout(() => {
+        saveState();
+        if (GS.isHost && GS.roomId) broadcastState();
+        if (dot) dot.classList.remove('saving');
+        const lbl = d('autosave-label');
+        if (lbl) { lbl.textContent = '已保存 ' + gt(); setTimeout(() => { lbl.textContent = '自动保存'; }, 3000); }
+      }, 800);
+    }
+    // Periodic auto-save every 20s
+    setInterval(() => { saveState(); }, 20000);
+    // Broadcast state updates every 500ms if connected
+    setInterval(() => { if (socketConnected && GS.roomId) broadcastState(); }, 500);
+
+    // Join history logic
+    function saveRoomHistory(roomId) {
+      let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
+      hist = hist.filter(id => id !== roomId);
+      hist.unshift(roomId);
+      hist = hist.slice(0, 8);
+      localStorage.setItem('gduck_room_history', JSON.stringify(hist));
+      renderRoomHistory();
+    }
+
+    function renderRoomHistory() {
+      const container = d('join-history-list');
+      if (!container) return;
+      let hist = JSON.parse(localStorage.getItem('gduck_room_history') || '[]');
+      container.innerHTML = '';
+      if (hist.length === 0) {
+        container.innerHTML = '<div class="rh-empty">暂无历史记录</div>';
+        return;
+      }
+      hist.forEach(id => {
+        let btn = document.createElement('button');
+        btn.className = 'rh-btn';
+        btn.textContent = '🏠 ' + id;
+        btn.onclick = () => { d('join-room-input').value = id; d('join-confirm').click(); };
+        container.appendChild(btn);
+      });
+    }
+    // Render once at start
+    renderRoomHistory();
+
+    // ===================== SOCKET.IO NETWORK SYNC =====================
+    let socket = null;
+    let socketConnected = false;
+    let socketConnecting = false;
+
+    function initSocket() {
+      if (socket) return;
+
+      socket = io({
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 10
+      });
+
+      socket.on('connect', () => {
+        socketConnected = true;
+        console.log('[Socket.io] 已连接到服务器');
+        d('sync-dot').className = 'sync-dot online';
+        if (GS.roomId) {
+          socket.emit('join-room', {
+            roomId: GS.roomId,
+            userId: myPeerId
+          });
+        }
+      });
+
+      socket.on('disconnect', () => {
+        socketConnected = false;
+        console.log('[Socket.io] 已断开连接');
+        d('sync-dot').className = 'sync-dot offline';
+      });
+
+      // 接收房间状态同步
+      socket.on('sync-state', (data) => {
+        console.log('[Socket.io] 收到初始状态同步');
+        if (data.state) {
+          applyRemoteState(data.state);
+        }
+      });
+
+      // 接收状态更新
+      socket.on('state-updated', (data) => {
+        if (data.state) {
+          applyRemoteState(data.state);
+        }
+      });
+
+      // 接收用户操作（来自其他客户端）
+      socket.on('user-action', (data) => {
+        if (data.from === socket.id) return; // 忽略自己的操作
+
+        // 重放远程用户的操作
+        simulateRemoteAction(data.action, data.payload);
+      });
+
+      // 接收通用事件
+      socket.on('event', (data) => {
+        if (data.from === socket.id) return; // 忽略自己的操作
+
+        console.log(`[Socket.io] 收到事件: ${data.event}`);
+        // 可根据事件类型进行处理
+      });
+
+      // 用户加入
+      socket.on('user-joined', (data) => {
+        console.log(`[Socket.io] 用户加入: ${data.userId}`);
+        lg('system', '👤', `${data.userId} 加入了房间`);
+      });
+
+      // 用户离开
+      socket.on('user-left', (data) => {
+        console.log(`[Socket.io] 用户离开: ${data.userId}`);
+        lg('system', '👋', `${data.userId} 离开了房间`);
+      });
+
+      // 房间加入确认
+      socket.on('room-joined', (data) => {
+        console.log(`[Socket.io] 加入房间: ${data.roomId}`);
+        d('sync-status').textContent = '已加入房间 ' + data.roomId;
+        d('sync-dot').className = 'sync-dot online';
+        d('room-id-display').textContent = data.roomId;
+        d('leave-room-btn').style.display = 'inline-flex';
+        sfxJoinApproved();
+        saveRoomHistory(data.roomId);
+        lg('system', '✅', `已连接房间 ${data.roomId}`);
+      });
+
+      socket.on('error', (error) => {
+        console.error('[Socket.io] 错误:', error);
+        d('sync-status').textContent = '连接错误';
+        d('sync-dot').className = 'sync-dot offline';
+      });
+    }
+
+    // 发送状态更新
+    function broadcastState() {
+      if (!socketConnected || !GS.roomId) return;
+
+      const state = exportState();
+      socket.emit('update-state', {
+        roomId: GS.roomId,
+        state: state
+      });
+
+      d('sync-dot').className = 'sync-dot online';
+    }
+
+    // 发送用户操作
+    function sendUserAction(action, payload) {
+      if (!socketConnected || !GS.roomId) return;
+
+      socket.emit('user-action', {
+        roomId: GS.roomId,
+        action: action,
+        payload: payload
+      });
+    }
+
+    // 模拟远程用户的操作（重放）
+    function simulateRemoteAction(action, payload) {
+      // 这里处理远程用户的操作
+      // 可以是点击、输入修改等
+      // 根据 action 类型执行相应的本地更新
+
+      if (!payload) return;
+
+      // 根据不同的操作类型处理
+      switch (action) {
+        case 'click':
+          if (payload.id) {
+            const el = document.getElementById(payload.id);
+            if (el) el.click();
+          }
+          break;
+        case 'input':
+          if (payload.id) {
+            const el = document.getElementById(payload.id);
+            if (el) {
+              el.value = payload.value;
+              el.dispatchEvent(new Event('input'));
+              el.dispatchEvent(new Event('change'));
+            }
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    // 初始化我的房间（房主模式）
+    function initMyRoom() {
+      GS.roomId = myRoomId;
+      GS.isHost = true;
+      GS.joinedRoom = null;
+      d('room-id-display').textContent = myRoomId;
+      d('my-room-code-display').textContent = myRoomId;
+      d('sync-status').textContent = '我的房间（初始化中...）';
+      d('sync-dot').className = 'sync-dot syncing';
+      d('leave-room-btn').style.display = 'none';
+
+      // 初始化 Socket.io 连接（如果尚未连接）
+      if (!socket) {
+        initSocket();
+      }
+
+      // 加入自己的房间
+      if (socketConnected) {
+        socket.emit('join-room', {
+          roomId: myRoomId,
+          userId: myPeerId
+        });
+        d('sync-status').textContent = '我的房间 · 房主';
+      }
+    }
+
+    // 加入他人房间
+    function directJoin(targetRoomId) {
+      if (targetRoomId === myRoomId) { alert('不能加入自己的房间！'); return; }
+      if (!targetRoomId || targetRoomId.trim() === '') { alert('请输入有效的房间号！'); return; }
+
+      saveState();
+
+      GS.joinedRoom = targetRoomId;
+      GS.isHost = false;
+      GS.roomId = targetRoomId;
+      d('sync-status').textContent = '连接房间中...';
+      d('sync-dot').className = 'sync-dot syncing';
+
+      // 初始化 Socket.io 连接（如果尚未连接）
+      if (!socket) {
+        initSocket();
+      }
+
+      // 如果已连接，直接加入房间
+      if (socketConnected) {
+        socket.emit('join-room', {
+          roomId: targetRoomId,
+          userId: myPeerId
+        });
+      }
+      // 否则等待 connect 事件，会自动加入房间
+    }
+
+    // 离开房间
+    function leaveRoom() {
+      if (socket && socketConnected) {
+        socket.emit('leave-room', {
+          roomId: GS.roomId,
+          userId: myPeerId
+        });
+      }
+
+      GS.joinedRoom = null;
+      GS.isHost = true;
+      d('leave-room-btn').style.display = 'none';
+      initMyRoom();
+      saveState();
+      lg('system', '🚪', '已退出他人房间，回到本地模式');
+    }
+
+    // 用户交互拦截 - 点击事件
+    document.addEventListener('click', (e) => {
+      if (GS.isHost) return; // 房主不需要转发，直接执行
+
+      const target = e.target.closest('button, .sc2, .cpc, .anc, .sab-punish-opt, .tbtn, .pc2, .rh-btn');
+      if (!target) return;
+
+      // UI 导航操作放行
+      const bypassIds = ['join-confirm', 'leave-confirm', 'join-room-btn', 'leave-room-btn', 'music-btn', 'bgm-stop-btn', 'show-neutral', 'hide-neutral', 'join-cancel', 'leave-cancel', 'role-cancel', 'clr-log'];
+      if (target.classList.contains('tbtn') || target.classList.contains('rh-btn') || bypassIds.includes(target.id) || (target.id && target.id.includes('cancel'))) {
+        return;
+      }
+
+      // 游戏操作转发到服务器
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (socketConnected && GS.roomId) {
+        sendUserAction('click', {
+          id: target.id || null,
+          dataset: target.dataset ? { ...target.dataset } : null,
+          className: target.className
+        });
+      }
+    }, true);
+
+    // 用户交互拦截 - 输入事件
+    document.addEventListener('input', (e) => {
+      if (GS.isHost || !e.target.id) return;
+
+      const bypassIds = ['join-room-input', 'bgm-vol', 'bgm-vol-label'];
+      if (bypassIds.includes(e.target.id)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (socketConnected && GS.roomId) {
+        sendUserAction('input', {
+          id: e.target.id,
+          value: e.target.value
+        });
+      }
+    }, true);
+
+    // 启动 Socket.io 连接
+    window.addEventListener('load', () => {
+      initSocket();
+    });
+
+    function onStateChanged() {
+      triggerAutoSave();
+      if (GS.isHost && GS.roomId) broadcastState();
+    }
+
+    // ===================== CONSTANTS =====================
+    const RN = { goose: '普信鹅 🪿', detective: '法师鹅 🔍', sheriff: '护法鹅 👮', duck: '魔罗鸭 🦆', pigeon: '轮回鸽 🕊️', dodo: '痴迷鸽 🦤' };
+    const GR = ['goose', 'detective', 'sheriff'];
+
+    const MUSIC_STYLES = [
+      { id: 'teahouse', name: '茶馆雅座', icon: '🍵', desc: '琵琶·悠然' },
+      { id: 'waterfall', name: '飞瀑清泉', icon: '🌊', desc: '水声·空灵' },
+      { id: 'nightmarket', name: '夜市喧嚣', icon: '🏮', desc: '热闹·活力' },
+      { id: 'temple', name: '古刹晨钟', icon: '🔔', desc: '梵音·禅意' },
+      { id: 'bamboo', name: '竹林深处', icon: '🎋', desc: '竹笛·清风' },
+      { id: 'moonlit', name: '月下小酌', icon: '🌙', desc: '古琴·悠远' },
+      { id: 'peach', name: '桃花源记', icon: '🌸', desc: '筝·梦幻' },
+      { id: 'storm', name: '惊雷骤雨', icon: '⛈️', desc: '雨声·激昂' },
+      { id: 'silk', name: '丝绸之路', icon: '🐫', desc: '旅途·悠长' },
+      { id: 'harvest', name: '丰收节庆', icon: '🌾', desc: '锣鼓·欢腾' },
+      { id: 'ink', name: '水墨丹青', icon: '🖌️', desc: '留白·墨香' },
+      { id: 'dragon', name: '龙舟竞渡', icon: '🐉', desc: '鼓点·澎湃' },
+      { id: 'snow', name: '雪夜静思', icon: '❄️', desc: '箫声·沉思' },
+      { id: 'spring', name: '春日晨曦', icon: '🌅', desc: '鸟鸣·温暖' },
+      { id: 'warrior', name: '将军战歌', icon: '⚔️', desc: '铿锵·豪迈' },
+    ];
+
+    function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function d(id) { return document.getElementById(id); }
+    function si(id, v) { const e = d(id); if (e) e.textContent = v; }
+    function gt() { return new Date().toTimeString().slice(0, 5); }
+    function gp(card) { return GS.players.find(p => p.id === +card.dataset.id); }
+
+    function setupNumInputs() {
+      document.querySelectorAll('input[type=number]').forEach(inp => {
+        inp.addEventListener('focus', function () { if (this.value === '0') this.value = ''; });
+        inp.addEventListener('blur', function () { if (this.value === '' || isNaN(this.value)) this.value = '0'; });
+      });
+    }
+
+    // ===================== AUDIO ENGINE =====================
+    function getAC() {
+      if (!GS.audioCtx) GS.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (GS.audioCtx.state === 'suspended') GS.audioCtx.resume();
+      return GS.audioCtx;
+    }
+    function tone(freq, dur, type = 'sine', vol = 0.28, delay = 0) {
+      if (GS.muted) return;
+      const actualVol = vol * GS.sfxVolume;
+      try {
+        const ac = getAC(), g = ac.createGain(), o = ac.createOscillator();
+        o.connect(g); g.connect(ac.destination); o.type = type; o.frequency.value = freq;
+        const t = ac.currentTime + delay;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(actualVol, t + 0.02);
+        g.gain.linearRampToValueAtTime(0, t + dur);
+        o.start(t); o.stop(t + dur + 0.05);
+      } catch (e) { }
+    }
+    function sfxTask() { tone(523, 0.08, 'sine', 0.5); setTimeout(() => tone(659, 0.08, 'sine', 0.45), 70); setTimeout(() => tone(784, 0.08, 'sine', 0.4), 140); setTimeout(() => tone(1047, 0.18, 'sine', 0.5), 210); }
+    function sfxDead() { tone(200, 0.3, 'sawtooth', 0.45); setTimeout(() => tone(150, 0.38, 'sawtooth', 0.38), 200); }
+    function sfxRes() { tone(660, 0.1, 'sine', 0.4); setTimeout(() => tone(880, 0.12, 'sine', 0.38), 100); setTimeout(() => tone(1100, 0.18, 'sine', 0.42), 220); }
+    function sfxDeduct() { tone(250, 0.22, 'sawtooth', 0.45); }
+    function sfxFail() { tone(300, 0.28, 'sawtooth', 0.55); setTimeout(() => tone(200, 0.45, 'sawtooth', 0.52), 280); }
+    function sfxWin() { if (GS.muted) return; const fanfare = [[523, 0.15], [659, 0.15], [784, 0.15], [1047, 0.35], [784, 0.1], [1047, 0.1], [1319, 0.5], [1047, 0.12], [1175, 0.12], [1319, 0.12], [1568, 0.6]]; let t = 0; fanfare.forEach(([f, dur]) => { setTimeout(() => tone(f, dur + 0.05, 'sine', 0.55), t); t += (dur * 1000) + 30; }); }
+    function sfxJoinApproved() { if (GS.muted) return; tone(523, 0.1, 'sine', 0.5); setTimeout(() => tone(659, 0.1, 'sine', 0.48), 120); setTimeout(() => tone(784, 0.2, 'sine', 0.52), 240); }
+    function sfxPKStart() { if (GS.muted) return; tone(440, 0.15, 'square', 0.4); setTimeout(() => tone(330, 0.15, 'square', 0.38), 160); setTimeout(() => tone(440, 0.15, 'square', 0.4), 320); setTimeout(() => tone(550, 0.3, 'sine', 0.45), 480); }
+    function sfxPKEnd() { if (GS.muted) return; tone(660, 0.12, 'sine', 0.48); setTimeout(() => tone(880, 0.12, 'sine', 0.46), 130); setTimeout(() => tone(1100, 0.25, 'sine', 0.5), 260); }
+    function sfxMeetingEnd() { if (GS.muted) return; tone(440, 0.18, 'sine', 0.38); setTimeout(() => tone(370, 0.18, 'sine', 0.35), 200); setTimeout(() => tone(330, 0.3, 'sine', 0.4), 400); }
+    function sfxMeetingStart() { if (GS.muted) return; tone(220, 0.8, 'sine', 0.35); setTimeout(() => tone(196, 0.7, 'sine', 0.30), 500); setTimeout(() => tone(174.61, 1.0, 'sine', 0.32), 1000); }
+    function startSabAlert() { stopSabAlert(); const alarm = () => { if (GS.muted || !GS.sabTimer) return; tone(1200, 0.08, 'square', 0.7); setTimeout(() => { if (!GS.muted && GS.sabTimer) tone(900, 0.08, 'square', 0.65); }, 120); }; alarm(); GS.sabAlertIv = setInterval(() => { if (!GS.sabTimer) { stopSabAlert(); return; } alarm(); }, 700); }
+    function stopSabAlert() { if (GS.sabAlertIv) { clearInterval(GS.sabAlertIv); GS.sabAlertIv = null; } }
+    function startMeetingOverAlert() { if (GS.meetingOverAlertIv) return; GS.meetingOverAlert = true; const alarm = () => { if (!GS.meetingOverAlert || GS.muted) return; tone(1400, 0.06, 'square', 0.6); setTimeout(() => { if (GS.meetingOverAlert && !GS.muted) tone(1000, 0.06, 'square', 0.55); }, 90); }; alarm(); GS.meetingOverAlertIv = setInterval(() => { if (!GS.meetingOverAlert) { stopMeetingOverAlert(); return; } alarm(); }, 550); }
+    function stopMeetingOverAlert() { GS.meetingOverAlert = false; if (GS.meetingOverAlertIv) { clearInterval(GS.meetingOverAlertIv); GS.meetingOverAlertIv = null; } }
+
+    // ===================== BGM ENGINE =====================
+    const SC = {
+      penta: [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 784, 880],
+      minorP: [220, 261.63, 311.13, 349.23, 392, 440, 523.25, 622.25, 698.46, 784],
+      chinese: [261.63, 293.66, 349.23, 392, 466.16, 523.25, 587.33, 698.46, 784, 932.33],
+      dorian: [261.63, 293.66, 311.13, 349.23, 392, 440, 466.16, 523.25, 587.33, 622.25],
+      major: [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25, 587.33, 659.25],
+      mixolyd: [261.63, 293.66, 329.63, 349.23, 392, 440, 466.16, 523.25, 587.33, 659.25],
+      wholeTone: [261.63, 293.66, 329.63, 369.99, 415.30, 466.16, 523.25, 587.33, 659.25, 739.99],
+      arabian: [261.63, 277.18, 329.63, 349.23, 392, 415.30, 493.88, 523.25, 587.33, 622.25],
+      minor: [261.63, 293.66, 311.13, 349.23, 392, 415.30, 466.16, 523.25, 587.33, 622.25],
+    };
+
+    function stopBG() {
+      GS.bgScheduled = false; GS.meetingBGMRunning = false;
+      GS.bgNodes.forEach(t => clearTimeout(t)); GS.bgNodes = [];
+      GS.meetingBGMNodes.forEach(t => clearTimeout(t)); GS.meetingBGMNodes = [];
+    }
+
+    function bgNote(freq, dur, type, vol, delay) {
+      if (GS.muted || GS.bgmStopped || !GS.bgScheduled) return;
+      const v = (vol || 0.12) * GS.bgVolume;
+      try {
+        const ac = getAC(), g = ac.createGain(), o = ac.createOscillator();
+        o.connect(g); g.connect(ac.destination);
+        o.type = type || 'sine'; o.frequency.value = freq;
+        const t = ac.currentTime + (delay || 0);
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.06);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.start(t); o.stop(t + dur + 0.12);
+      } catch (e) { }
+    }
+
+    function makePhraseLayer(scale, opts) {
+      if (!GS.bgScheduled) return;
+      const phrases = [[0, 2, 4, 7, 5, 3, 1, 4], [0, 4, 3, 2, 5, 1, 3, 0], [2, 4, 6, 5, 3, 1, 2, 4], [0, 1, 3, 5, 4, 2, 0, 3], [0, 3, 5, 4, 2, 1, 3, 2], [1, 3, 5, 6, 4, 2, 0, 2], [0, 2, 5, 3, 4, 1, 2, 0], [2, 0, 3, 5, 2, 4, 1, 3]];
+      let phraseIdx = 0, posInPhrase = 0, rootShift = 0;
+      const tick = () => {
+        if (!GS.bgScheduled || GS.muted || GS.bgmStopped) return;
+        const phrase = phrases[phraseIdx % phrases.length];
+        const noteIdx = (phrase[posInPhrase % phrase.length] + rootShift) % scale.length;
+        bgNote(scale[Math.max(0, noteIdx)], opts.dur || 0.5, opts.type || 'sine', opts.vol || 0.14);
+        posInPhrase++;
+        if (posInPhrase % 8 === 0) { phraseIdx++; if (Math.random() < .35) rootShift = (rootShift + 1) % scale.length; }
+        const ms = (opts.minMs || 300) + Math.random() * ((opts.maxMs || 500) - (opts.minMs || 300));
+        const id = setTimeout(tick, ms); GS.bgNodes.push(id);
+      };
+      tick();
+    }
+
+    function makeDroneLayer(freqs, opts) {
+      if (!GS.bgScheduled) return;
+      let step = 0;
+      const tick = () => {
+        if (!GS.bgScheduled || GS.muted || GS.bgmStopped) return;
+        const f = freqs[step % freqs.length];
+        bgNote(f, opts.dur || 2.5, opts.type || 'sine', opts.vol || 0.09);
+        step++;
+        const ms = (opts.minMs || 1200) + Math.random() * ((opts.maxMs || 2400) - (opts.minMs || 1200));
+        const id = setTimeout(tick, ms); GS.bgNodes.push(id);
+      };
+      tick();
+    }
+
+    const BGM_GEN = {
+      teahouse() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.chinese, { minMs: 260, maxMs: 480, vol: 0.16, dur: 0.55, type: 'sine' }); setTimeout(() => makeDroneLayer([130.81, 174.61, 196.00, 261.63], { minMs: 700, maxMs: 1300, vol: 0.12, dur: 1.2, type: 'sine' }), 300); },
+      waterfall() { stopBG(); GS.bgScheduled = true; makePhraseLayer([523.25, 587.33, 659.25, 784, 880, 1046.5, 1174.7], { minMs: 400, maxMs: 900, vol: 0.10, dur: 1.1, type: 'sine' }); setTimeout(() => makeDroneLayer([65.41, 55, 82.41, 73.42], { minMs: 2500, maxMs: 4500, vol: 0.11, dur: 3.5, type: 'sine' }), 400); },
+      nightmarket() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.penta, { minMs: 160, maxMs: 280, vol: 0.18, dur: 0.2, type: 'sine' }); setTimeout(() => makeDroneLayer([130.81, 196, 261.63, 196, 130.81, 174.61], { minMs: 380, maxMs: 500, vol: 0.14, dur: 0.18, type: 'square' }), 200); },
+      temple() { stopBG(); GS.bgScheduled = true; makePhraseLayer([196, 220, 261.63, 174.61, 233.08, 261.63, 246.94], { minMs: 1500, maxMs: 3500, vol: 0.18, dur: 2.8, type: 'sine' }); setTimeout(() => makeDroneLayer([65.41, 55, 49.00, 82.41], { minMs: 4000, maxMs: 7000, vol: 0.18, dur: 5.0, type: 'sine' }), 800); },
+      bamboo() { stopBG(); GS.bgScheduled = true; makePhraseLayer([587.33, 659.25, 740, 784, 880, 987.77, 1047, 1175], { minMs: 320, maxMs: 620, vol: 0.14, dur: 0.45, type: 'sine' }); setTimeout(() => makeDroneLayer([130.81, 174.61, 196.00], { minMs: 1500, maxMs: 2800, vol: 0.09, dur: 2.0, type: 'sine' }), 600); },
+      moonlit() { stopBG(); GS.bgScheduled = true; makePhraseLayer([329.63, 369.99, 440, 493.88, 554.37, 659.25, 739.99], { minMs: 900, maxMs: 2000, vol: 0.20, dur: 1.8, type: 'sine' }); setTimeout(() => makeDroneLayer([82.41, 110, 130.81], { minMs: 4500, maxMs: 7000, vol: 0.08, dur: 4.0, type: 'sine' }), 500); },
+      peach() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.wholeTone, { minMs: 350, maxMs: 650, vol: 0.13, dur: 0.85, type: 'sine' }); setTimeout(() => makeDroneLayer([130.81, 164.81, 196.00, 220], { minMs: 1800, maxMs: 3200, vol: 0.10, dur: 2.5, type: 'sine' }), 300); },
+      storm() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.minorP, { minMs: 180, maxMs: 320, vol: 0.20, dur: 0.2, type: 'sawtooth' }); setTimeout(() => makeDroneLayer([41.20, 55, 65.41, 49.00], { minMs: 1500, maxMs: 3000, vol: 0.18, dur: 2.0, type: 'sawtooth' }), 200); },
+      silk() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.arabian, { minMs: 280, maxMs: 520, vol: 0.16, dur: 0.6, type: 'sine' }); setTimeout(() => makeDroneLayer([130.81, 174.61, 196.00, 155.56], { minMs: 900, maxMs: 1600, vol: 0.12, dur: 1.0, type: 'sine' }), 400); },
+      harvest() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.major, { minMs: 150, maxMs: 240, vol: 0.18, dur: 0.18, type: 'sine' }); setTimeout(() => makeDroneLayer([130.81, 196, 261.63, 196, 130.81, 261.63], { minMs: 300, maxMs: 450, vol: 0.15, dur: 0.14, type: 'square' }), 100); },
+      ink() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.chinese, { minMs: 1200, maxMs: 2800, vol: 0.22, dur: 1.4, type: 'sine' }); setTimeout(() => makeDroneLayer([65.41, 87.31, 130.81], { minMs: 6000, maxMs: 10000, vol: 0.07, dur: 5.0, type: 'sine' }), 700); },
+      dragon() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.dorian, { minMs: 150, maxMs: 260, vol: 0.22, dur: 0.17, type: 'sawtooth' }); setTimeout(() => makeDroneLayer([82.41, 110, 130.81, 98.00, 110, 82.41], { minMs: 320, maxMs: 420, vol: 0.17, dur: 0.15, type: 'square' }), 100); },
+      snow() { stopBG(); GS.bgScheduled = true; makePhraseLayer([261.63, 311.13, 349.23, 415.30, 466.16, 523.25, 554.37], { minMs: 900, maxMs: 2200, vol: 0.14, dur: 1.6, type: 'sine' }); setTimeout(() => makePhraseLayer([1047, 1175, 1319, 1568, 1760], { minMs: 1400, maxMs: 3000, vol: 0.07, dur: 2.5, type: 'sine' }), 800); },
+      spring() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.major, { minMs: 280, maxMs: 480, vol: 0.15, dur: 0.55, type: 'sine' }); setTimeout(() => makePhraseLayer([329.63, 392, 440, 523.25, 392, 329.63, 440, 523.25], { minMs: 400, maxMs: 700, vol: 0.09, dur: 0.7, type: 'triangle' }), 350); },
+      warrior() { stopBG(); GS.bgScheduled = true; makePhraseLayer(SC.mixolyd, { minMs: 140, maxMs: 220, vol: 0.24, dur: 0.16, type: 'square' }); setTimeout(() => makeDroneLayer([41.20, 55, 82.41, 73.42, 55, 41.20], { minMs: 260, maxMs: 380, vol: 0.18, dur: 0.14, type: 'sawtooth' }), 100); },
+    };
+
+    function startMeetingBGM() {
+      if (GS.muted || GS.bgmStopped || GS.meetingBGMRunning) return;
+      stopBG(); GS.bgScheduled = true; GS.meetingBGMRunning = true;
+      makePhraseLayer([196, 220, 174.61, 233.08, 207.65, 261.63, 185.00], { minMs: 1800, maxMs: 3500, vol: 0.16, dur: 2.5, type: 'sine' });
+      setTimeout(() => makeDroneLayer([55, 65.41, 49.00, 73.42], { minMs: 3000, maxMs: 5000, vol: 0.20, dur: 5.0, type: 'sine' }), 600);
+    }
+    function stopMeetingBGM() { GS.meetingBGMRunning = false; }
+    function startBG() { if (GS.muted || GS.bgmStopped) return; GS.isMeetingBGM = false; if (BGM_GEN[GS.currentBGM]) BGM_GEN[GS.currentBGM](); }
+    function pauseMeetingBGM() { stopBG(); }
+    function resumeMeetingBGM() { if (!GS.muted && !GS.bgmStopped) startMeetingBGM(); }
+
+    // ===================== MUSIC UI =====================
+    function buildMusicGrid() {
+      const grid = d('music-grid'); grid.innerHTML = '';
+      MUSIC_STYLES.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'mbtn' + (GS.currentBGM === s.id ? ' active' : ''); btn.dataset.id = s.id;
+        btn.innerHTML = `<span class="mico">${s.icon}</span><strong>${s.name}</strong><br><small style="color:#999;font-weight:400;">${s.desc}</small>`;
+        btn.addEventListener('click', () => {
+          GS.currentBGM = s.id; GS.bgmStopped = false;
+          document.querySelectorAll('.mbtn').forEach(b => b.classList.toggle('active', b.dataset.id === s.id));
+          d('bgm-stop-btn').textContent = '⏹ 关闭音乐';
+          if (!GS.muted) { if (GS.meetingActive && GS.meetingBGMRunning) { stopBG(); startMeetingBGM(); } else { stopBG(); GS.isMeetingBGM = false; startBG(); } }
+          lg('system', '🎵', `切换音乐：${s.name}`);
+        });
+        grid.appendChild(btn);
+      });
+    }
+
+    d('bgm-stop-btn').addEventListener('click', () => {
+      if (GS.bgScheduled) { stopBG(); GS.bgmStopped = true; d('bgm-stop-btn').textContent = '▶ 开启音乐'; lg('system', '⏹', '背景音乐已关闭'); }
+      else { GS.bgmStopped = false; if (GS.meetingActive) { startMeetingBGM(); } else { startBG(); } d('bgm-stop-btn').textContent = '⏹ 关闭音乐'; lg('system', '▶️', '背景音乐已开启'); }
+    });
+    d('bgm-vol').addEventListener('input', function () { GS.bgVolume = parseInt(this.value) / 100; d('bgm-vol-label').textContent = this.value + '%'; });
+    d('music-btn').addEventListener('click', () => {
+      GS.muted = !GS.muted; d('music-btn').textContent = GS.muted ? '🔇' : '🎵';
+      if (!GS.muted && !GS.bgmStopped) { if (GS.meetingActive) { startMeetingBGM(); } else startBG(); }
+      else if (GS.muted) stopBG();
+    });
+
+    // ===================== LOGGING =====================
+    function lg(type, ic, tx) {
+      const log = d('ev-log'), e = document.createElement('div');
+      e.className = `le ${type}`;
+      e.innerHTML = `<span>${ic}</span><span class="lt">${gt()}</span><span>${tx}</span>`;
+      log.insertBefore(e, log.firstChild);
+      if (log.children.length > 120) log.removeChild(log.lastChild);
+    }
+
+    // ===================== SAVE/LOAD =====================
+    function saveState() {
+      try {
+        const state = {
+          teams: GS.teams,
+          totalTasks: GS.totalTasks, taskTarget: GS.taskTarget, meetRound: GS.meetRound, sabSuccessCount: GS.sabSuccessCount,
+          players: GS.players.map(p => ({ id: p.id, name: p.name, teamIdx: p.teamIdx, role: p.element.dataset.role, tasks: p.tasks, votes: p.votes, dead: p.element.classList.contains('eliminated'), resurrected: p.element.classList.contains('resurrected') })),
+          roleCounts: { goose: parseInt(d('cnt-goose').value) || 0, det: parseInt(d('cnt-det').value) || 0, sher: parseInt(d('cnt-sher').value) || 0, duck: parseInt(d('cnt-duck').value) || 0, pig: parseInt(d('cnt-pig').value) || 0, dodo: parseInt(d('cnt-dodo').value) || 0 },
+          currentBGM: GS.currentBGM, bgVolume: GS.bgVolume, muted: GS.muted, bgmStopped: GS.bgmStopped,
+        };
+        localStorage.setItem('gduck_save', JSON.stringify(state));
+      } catch (e) { }
+    }
+
+    function exportState() {
+      return {
+        teams: GS.teams,
+        players: GS.players.map(p => ({ id: p.id, name: p.name, teamIdx: p.teamIdx, role: p.element.dataset.role, tasks: p.tasks, votes: p.votes || 0, pkVotes: p.pkVotes || 0, dead: p.element.classList.contains('eliminated'), resurrected: p.element.classList.contains('resurrected') })),
+        totalTasks: GS.totalTasks, taskTarget: GS.taskTarget, meetRound: GS.meetRound, sabSuccessCount: GS.sabSuccessCount,
+        roleCounts: { goose: parseInt(d('cnt-goose').value) || 0, det: parseInt(d('cnt-det').value) || 0, sher: parseInt(d('cnt-sher').value) || 0, duck: parseInt(d('cnt-duck').value) || 0, pig: parseInt(d('cnt-pig').value) || 0, dodo: parseInt(d('cnt-dodo').value) || 0 },
+        // Extended real-time sync
+        logs: d('ev-log').innerHTML,
+        sabTimerActive: !!GS.sabTimer,
+        sabSec: GS.sabSec,
+        sabDesc: d('sab-desc-disp').textContent,
+        discRun: GS.discRun,
+        discSec: GS.discSec,
+        meetingActive: GS.meetingActive,
+        votingLocked: GS.votingLocked,
+        pkMode: GS.pkMode,
+        tbnActive: Array.from(document.querySelectorAll('.tbtn')).findIndex(b => b.classList.contains('active')),
+        modals: Array.from(document.querySelectorAll('.mo')).map(m => ({ id: m.id, className: m.className })),
+        resultModHTML: d('res-mod-inner').innerHTML,
+        sabResultHTML: d('mod-sab-result').querySelector('.mod').innerHTML,
+        pkEndHTML: d('mod-pk-end').innerHTML,
+        sabTimerText: d('sab-timer').textContent,
+        discClkText: d('disc-clk').textContent,
+        voteBoardHTML: d('vote-rb').innerHTML,
+        voteRbShow: d('vote-rb').classList.contains('show'),
+        sabConfHTML: d('mod-sab-punish-confirm').innerHTML
+      };
+    }
+
+    function applyRemoteState(state) {
+      if (!state) return;
+      if (state.teams && JSON.stringify(state.teams) !== JSON.stringify(GS.teams)) {
+        GS.teams = state.teams; buildTeamConfigUI();
+      }
+      if (state.players && state.players.length !== GS.players.length) { genPlayers(true); }
+      if (state.players) {
+        state.players.forEach(sp => {
+          const p = GS.players.find(x => x.id === sp.id); if (!p) return;
+          if (p.tasks !== sp.tasks) { p.tasks = sp.tasks; p.element.querySelector('.tc').textContent = sp.tasks; }
+          p.votes = sp.votes || 0;
+          p.pkVotes = sp.pkVotes || 0;
+          const wasDead = p.element.classList.contains('eliminated');
+          if (sp.dead && !wasDead) elimP(p.element, true);
+          else if (!sp.dead && wasDead) resP(p.element, true);
+          if (sp.role !== p.element.dataset.role) setRole(p.element, sp.role);
+          const vin = d('vin-' + p.id); if (vin && document.activeElement !== vin) vin.value = p.votes;
+        });
+        GS.totalTasks = state.totalTasks || 0; GS.taskTarget = state.taskTarget || 80; GS.meetRound = state.meetRound || 1; GS.sabSuccessCount = state.sabSuccessCount || 0;
+        if (state.taskTarget && document.activeElement !== d('tgt-input')) d('tgt-input').value = state.taskTarget;
+        if (document.activeElement !== d('m-round-input')) d('m-round-input').value = GS.meetRound;
+        if (state.roleCounts) { const rc = state.roleCounts;['goose', 'det', 'sher', 'duck', 'pig', 'dodo'].forEach(k => { const el = d('cnt-' + k); if (el && document.activeElement !== el) el.value = rc[k] || 0; }); }
+
+        // Aggressive Visual Sync for Client
+        d('ev-log').innerHTML = state.logs || '';
+        if (state.sabTimerActive) d('sab-banner').classList.add('active'); else d('sab-banner').classList.remove('active');
+        d('sab-desc-disp').textContent = state.sabDesc || '';
+        d('sab-timer').textContent = state.sabTimerText || '';
+        d('disc-clk').textContent = state.discClkText || '';
+        GS.meetingActive = !!state.meetingActive;
+        GS.discRun = !!state.discRun;
+        GS.votingLocked = !!state.votingLocked;
+        try { setVotingLocked(GS.votingLocked); } catch (e) { }
+        GS.pkMode = !!state.pkMode;
+
+        // UI elements HTML sync natively
+        d('vote-rb').innerHTML = state.voteBoardHTML || '';
+        if (state.voteRbShow) d('vote-rb').classList.add('show'); else d('vote-rb').classList.remove('show');
+        d('res-mod-inner').innerHTML = state.resultModHTML || '';
+        d('mod-sab-result').querySelector('.mod').innerHTML = state.sabResultHTML || '';
+        d('mod-pk-end').innerHTML = state.pkEndHTML || '';
+        d('mod-sab-punish-confirm').innerHTML = state.sabConfHTML || '';
+
+        // Modals
+        if (state.modals) {
+          state.modals.forEach(sm => {
+            const m = d(sm.id);
+            if (m && m.className !== sm.className) m.className = sm.className;
+          });
+        }
+
+        // Tab Sync
+        if (state.tbnActive !== undefined && state.tbnActive > -1) {
+          const tabBtns = Array.from(document.querySelectorAll('.tbtn'));
+          if (tabBtns[state.tbnActive] && !tabBtns[state.tbnActive].classList.contains('active')) {
+            activateTab(tabBtns[state.tbnActive].dataset.tab);
+          }
+        }
+
+        updStats();
+        try { updJailBoard(); } catch (e) { }
+        d('sync-dot').className = 'sync-dot online';
+      }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem('gduck_save');
+        if (!raw) return false;
+        const state = JSON.parse(raw);
+        if (state.teams && Array.isArray(state.teams)) GS.teams = state.teams;
+        buildTeamConfigUI();
+        GS.taskTarget = state.taskTarget || 80; d('tgt-input').value = GS.taskTarget; si('tgt-label', GS.taskTarget);
+        if (state.roleCounts) { const rc = state.roleCounts;['goose', 'det', 'sher', 'duck', 'pig', 'dodo'].forEach(k => { const el = d('cnt-' + k); if (el) el.value = rc[k] || 0; }); }
+        if (state.currentBGM) GS.currentBGM = state.currentBGM;
+        if (typeof state.bgVolume === 'number') { GS.bgVolume = state.bgVolume; d('bgm-vol').value = Math.round(state.bgVolume * 100); d('bgm-vol-label').textContent = Math.round(state.bgVolume * 100) + '%'; }
+        if (typeof state.muted === 'boolean') { GS.muted = state.muted; d('music-btn').textContent = GS.muted ? '🔇' : '🎵'; }
+        if (typeof state.bgmStopped === 'boolean') GS.bgmStopped = state.bgmStopped;
+        const totalPlayers = GS.teams.reduce((a, t) => a + (t.count || 0), 0);
+        if (totalPlayers > 0) {
+          genPlayers(true);
+          if (state.players) {
+            state.players.forEach(sp => {
+              const p = GS.players.find(x => x.id === sp.id); if (!p) return;
+              p.tasks = sp.tasks; p.element.querySelector('.tc').textContent = sp.tasks;
+              p.votes = sp.votes || 0;
+              if (sp.role) setRole(p.element, sp.role);
+              if (sp.dead) elimP(p.element, true);
+              else if (sp.resurrected) resP(p.element, true);
+            });
+            GS.totalTasks = state.totalTasks || 0;
+          }
+        }
+        GS.meetRound = state.meetRound || 1; d('m-round-input').value = GS.meetRound;
+        GS.sabSuccessCount = state.sabSuccessCount || 0;
+        updStats(); updTT(); refCands(); refPickers();
+        return true;
+      } catch (e) { return false; }
+    }
+
+    // ===================== TEAM CONFIG =====================
+    function buildTeamConfigUI() {
+      const container = d('team-config-list'); container.innerHTML = '';
+      GS.teams.forEach((team, idx) => {
+        const row = document.createElement('div'); row.className = 'team-row'; row.dataset.idx = idx;
+        row.innerHTML = `
+      <input class="team-name-input" type="text" value="${escHtml(team.name)}" placeholder="队伍名称" data-idx="${idx}">
+      <input class="team-count-direct" type="number" value="${team.count}" min="0" max="99" placeholder="0" data-idx="${idx}" title="直接输入人数">
+      <button class="team-del-btn" data-idx="${idx}">✕</button>
+    `;
+        container.appendChild(row);
+      });
+      container.querySelectorAll('.team-name-input').forEach(inp => { inp.addEventListener('input', function () { GS.teams[parseInt(this.dataset.idx)].name = this.value; }); });
+      container.querySelectorAll('.team-count-direct').forEach(inp => {
+        inp.addEventListener('focus', function () { if (this.value === '0') this.value = ''; });
+        inp.addEventListener('blur', function () { let v = parseInt(this.value); if (isNaN(v) || v < 0) v = 0; GS.teams[parseInt(this.dataset.idx)].count = v; this.value = v; });
+        inp.addEventListener('input', function () { let v = parseInt(this.value); if (!isNaN(v) && v >= 0) GS.teams[parseInt(this.dataset.idx)].count = v; });
+      });
+      container.querySelectorAll('.team-del-btn').forEach(btn => {
+        btn.addEventListener('click', function () { const i = parseInt(this.dataset.idx); if (GS.teams.length <= 1) { alert('至少保留一个队伍！'); return; } GS.teams.splice(i, 1); buildTeamConfigUI(); });
+      });
+    }
+
+    d('add-team-btn').addEventListener('click', () => { GS.teams.push({ name: `队伍${GS.teams.length + 1}`, count: 0 }); buildTeamConfigUI(); });
+
+    // ===================== SETUP STEPS =====================
+    function goToStep(n) {
+      GS.currentStep = n;
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.setup-step-btn').forEach((b, i) => {
+        b.classList.remove('active', 'done');
+        if (i + 1 < n) b.classList.add('done');
+        if (i + 1 === n) b.classList.add('active');
+        b.disabled = (i + 1 > n);
+      });
+      const panel = d(`step-panel-${n}`); if (panel) panel.classList.add('active');
+      if (n === 3) {
+        const totalP = GS.players.length;
+        const totalR = ['goose', 'det', 'sher', 'duck', 'pig', 'dodo'].reduce((a, k) => a + (parseInt(d('cnt-' + k).value) || 0), 0);
+        si('step3-total', totalP); si('step3-roles', totalR);
+      }
+    }
+
+    d('upd-teams').addEventListener('click', () => {
+      const total = GS.teams.reduce((a, t) => a + (t.count || 0), 0);
+      if (!total) { alert('至少需要一个队伍有成员！'); return; }
+      showC1('确定应用队伍配置？', ok => { if (!ok) return; GS.totalTasks = 0; genPlayers(); d('step2-btn').disabled = false; goToStep(2); });
+    });
+    d('go-to-step3').addEventListener('click', () => { d('step3-btn').disabled = false; goToStep(3); });
+    d('back-to-step1').addEventListener('click', () => goToStep(1));
+    d('back-to-step2').addEventListener('click', () => goToStep(2));
+    document.querySelectorAll('.setup-step-btn').forEach(btn => { btn.addEventListener('click', () => { const step = parseInt(btn.dataset.step); if (!btn.disabled) goToStep(step); }); });
+
+    // ===================== PLAYERS =====================
+    function genPlayers(skipConfirm) {
+      document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; let pid = 1;
+      GS.teams.forEach((team, i) => {
+        const sz = team.count || 0; if (!sz) return;
+        const sec = document.createElement('div'); sec.className = 'card tsec';
+        sec.innerHTML = `<div class="card-accent"></div><div class="cb"><div class="tthd"><div class="ttitle">${escHtml(team.name)}组</div><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;"><div class="tmeta">成员 ${sz} 人</div><div class="tmeta">组内任务：<strong id="tt-${i + 1}" style="color:var(--pc);">0</strong></div></div></div><div class="pg" id="tg-${i + 1}"></div></div>`;
+        document.getElementById('teams-container').appendChild(sec);
+        const grid = sec.querySelector(`#tg-${i + 1}`);
+        for (let j = 1; j <= sz; j++) {
+          const card = mkCard(pid, team.name, j, i + 1); grid.appendChild(card);
+          GS.players.push({ id: pid, element: card, name: `${team.name}${j}`, role: '', teamIdx: i + 1, tasks: 0, votes: 0, pkVotes: 0 }); pid++;
+        }
+      });
+      updStats(); refCands(); refPickers();
+      if (!skipConfirm) { lg('system', '🏮', `队伍更新，共 ${GS.players.length} 名修行者`); onStateChanged(); }
+    }
+
+    function mkCard(id, team, num, ti) {
+      const c = document.createElement('div'); c.className = 'pc2'; c.dataset.id = id; c.dataset.role = ''; c.dataset.ti = ti;
+      c.innerHTML = `<span class="sdot alive"></span><div class="pname">${escHtml(team)}${num}</div><div class="prole"></div><div class="ptask">✅ <span class="tc">0</span></div>`;
+      c.addEventListener('click', () => openMenu(c));
+      return c;
+    }
+
+    // ===================== ACTION MENU =====================
+    const menuEl = d('act-menu'), bdEl = d('am-backdrop');
+    function openMenu(card) {
+      if (GS.manualMode) { GS.curCard = card; showMod('mod-role'); return; }
+      GS.curCard = card; const p = gp(card); d('am-pname').textContent = p ? p.name : '';
+      const dead = card.classList.contains('eliminated');
+      d('am-elim').style.display = dead ? 'none' : 'flex'; d('am-res').style.display = dead ? 'flex' : 'none';
+      bdEl.classList.add('open'); menuEl.classList.add('open');
+    }
+    function closeMenu() { menuEl.classList.remove('open'); bdEl.classList.remove('open'); }
+    bdEl.addEventListener('click', closeMenu);
+    d('am-close').addEventListener('click', closeMenu);
+    d('am-add').addEventListener('click', () => {
+      const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return;
+      p.tasks++; c.querySelector('.tc').textContent = p.tasks; GS.totalTasks++;
+      c.classList.add('tf'); setTimeout(() => c.classList.remove('tf'), 650); sfxTask();
+      updStats(); updTT(); lg('task', '✅', `${p.name} 完成任务（共${p.tasks}个）· 全场${GS.totalTasks}`);
+      onStateChanged(); closeMenu();
+    });
+    d('am-sub').addEventListener('click', () => {
+      const c = GS.curCard; if (!c) return; const p = gp(c); if (!p || p.tasks <= 0) return;
+      p.tasks--; c.querySelector('.tc').textContent = p.tasks; GS.totalTasks = Math.max(0, GS.totalTasks - 1);
+      updStats(); updTT(); lg('deduct', '❌', `${p.name} 任务-1（剩${p.tasks}）`);
+      onStateChanged(); closeMenu();
+    });
+    d('am-elim').addEventListener('click', () => {
+      const c = GS.curCard; if (!c) return; closeMenu();
+      showC1('确定要让此修行者往生吗？', ok => { if (!ok) return; elimP(c); updStats(); refCands(); refPickers(); onStateChanged(); });
+    });
+    d('am-res').addEventListener('click', () => {
+      const c = GS.curCard; if (!c) return; closeMenu();
+      showC1('确定要让此修行者重生吗？', ok => { if (!ok) return; resP(c); updStats(); refCands(); refPickers(); onStateChanged(); });
+    });
+    d('am-role').addEventListener('click', () => { showMod('mod-role'); closeMenu(); });
+
+    // ===================== PLAYER STATUS =====================
+    function elimP(c, silent) {
+      const p = gp(c); c.classList.add('eliminated'); c.classList.remove('resurrected');
+      c.querySelector('.sdot').className = 'sdot dead'; c.querySelector('.prole').classList.remove('vis');
+      if (!silent) { sfxDead(); if (p) lg('eliminate', '💀', `${p.name} 往生！`); }
+    }
+    function resP(c, silent) {
+      const p = gp(c); c.classList.remove('eliminated'); c.classList.add('resurrected');
+      c.querySelector('.sdot').className = 'sdot res';
+      if (!GS.rolesVis) c.querySelector('.prole').classList.remove('vis');
+      if (!silent) { sfxRes(); if (p) lg('resurrect', '✨', `${p.name} 重生！`); }
+    }
+    function setRole(c, role) {
+      c.classList.remove('goose', 'detective', 'sheriff', 'duck', 'pigeon', 'dodo', 'sr');
+      c.dataset.role = role; const rt = c.querySelector('.prole'); const p = gp(c); if (p) p.role = role;
+      if (role) { rt.textContent = RN[role] || ''; if (GS.rolesVis) { c.classList.add('sr', role); rt.classList.add('vis'); } else rt.classList.remove('vis'); }
+      else { rt.textContent = ''; rt.classList.remove('vis'); }
+    }
+
+    // ===================== ROLES =====================
+    function assignRoles() {
+      const C = { goose: +d('cnt-goose').value || 0, detective: +d('cnt-det').value || 0, sheriff: +d('cnt-sher').value || 0, duck: +d('cnt-duck').value || 0, pigeon: +d('cnt-pig').value || 0, dodo: +d('cnt-dodo').value || 0 };
+      const total = Object.values(C).reduce((a, b) => a + b, 0);
+      if (total !== GS.players.length) { alert(`角色总数(${total})必须等于修行者总数(${GS.players.length})！`); return; }
+      GS.players.forEach(p => {
+        p.element.classList.remove('goose', 'detective', 'sheriff', 'duck', 'pigeon', 'dodo', 'sr', 'eliminated', 'resurrected', 'tf');
+        p.element.dataset.role = ''; p.element.querySelector('.sdot').className = 'sdot alive';
+        p.element.querySelector('.prole').textContent = ''; p.element.querySelector('.prole').classList.remove('vis');
+        p.tasks = 0; p.votes = 0; p.pkVotes = 0; p.role = ''; p.element.querySelector('.tc').textContent = '0';
+      });
+      GS.totalTasks = 0;
+      const sh = [...GS.players].sort(() => Math.random() - .5); let idx = 0;
+      ['sheriff', 'detective', 'duck', 'pigeon', 'dodo', 'goose'].forEach(role => { for (let i = 0; i < C[role]; i++) { if (idx < sh.length) { sh[idx].element.dataset.role = role; sh[idx].role = role; sh[idx].element.querySelector('.prole').textContent = RN[role] || ''; idx++; } } });
+      updStats(); refCands(); refPickers(); onStateChanged(); lg('system', '🎲', '身份随机分配完毕！');
+    }
+    function showAllRoles() { GS.rolesVis = true; GS.players.forEach(p => { const r = p.element.dataset.role; if (!r) return; p.element.classList.add('sr', r); p.element.querySelector('.prole').classList.add('vis'); }); }
+    function hideAllRoles() { GS.rolesVis = false; GS.players.forEach(p => { p.element.classList.remove('sr', 'goose', 'detective', 'sheriff', 'duck', 'pigeon', 'dodo'); p.element.querySelector('.prole').classList.remove('vis'); }); }
+
+    // ===================== STATS =====================
+    function updStats() {
+      const alive = GS.players.filter(p => !p.element.classList.contains('eliminated')).length;
+      const elim = GS.players.length - alive;
+      si('s-total', GS.players.length); si('s-alive', alive); si('s-tasks', GS.totalTasks);
+      const pct = GS.taskTarget ? Math.min(100, Math.round(GS.totalTasks / GS.taskTarget * 100)) : 0;
+      d('pb-fill').style.width = pct + '%'; d('pb-label').textContent = `${GS.totalTasks} / ${GS.taskTarget}`;
+      si('tgt-label', GS.taskTarget); si('wc-task', GS.taskTarget);
+      const C = { goose: 0, detective: 0, sheriff: 0, duck: 0, pigeon: 0, dodo: 0 };
+      GS.players.forEach(p => { if (!p.element.classList.contains('eliminated')) { const r = p.element.dataset.role; if (r in C) C[r]++; } });
+      si('s-goose', C.goose); si('s-det', C.detective); si('s-sher', C.sheriff); si('s-duck', C.duck); si('s-pig', C.pigeon); si('s-dodo', C.dodo); si('s-sab-c', GS.sabSuccessCount);
+      const ducks = GS.players.filter(p => !p.element.classList.contains('eliminated') && p.element.dataset.role === 'duck').length;
+      const geese = GS.players.filter(p => !p.element.classList.contains('eliminated') && GR.includes(p.element.dataset.role)).length;
+      si('m-alive', alive); si('m-geese', geese); si('m-ducks', ducks); si('m-elim', elim);
+    }
+    function updTT() {
+      GS.teams.forEach((_, i) => { const e = d(`tt-${i + 1}`); if (e) e.textContent = GS.players.filter(p => p.teamIdx === i + 1).reduce((a, p) => a + p.tasks, 0); });
+    }
+    d('sc-pig').addEventListener('click', () => { GS.pigReveal = !GS.pigReveal; d('sl-pig').textContent = GS.pigReveal ? '轮回鸽 🕊️' : '秘密 🔒'; });
+    d('sc-dodo').addEventListener('click', () => { GS.dodoReveal = !GS.dodoReveal; d('sl-dodo').textContent = GS.dodoReveal ? '痴迷鸽 🦤' : '秘密 🔒'; });
+
+    // ===================== BULK =====================
+    d('bulk-add').addEventListener('click', () => {
+      const n = +d('bulk-n').value || 1, alive = GS.players.filter(p => !p.element.classList.contains('eliminated'));
+      showC1(`全场${alive.length}名存活者各+${n}任务，确认？`, ok => {
+        if (!ok) return;
+        alive.forEach(p => { p.tasks += n; p.element.querySelector('.tc').textContent = p.tasks; });
+        GS.totalTasks += alive.length * n; sfxTask(); updStats(); updTT();
+        lg('task', '✅', `全场+${n}任务，总计${GS.totalTasks}`); onStateChanged();
+      });
+    });
+    d('tgt-set').addEventListener('click', () => { const t = +d('tgt-input').value || 80; GS.taskTarget = t; si('tgt-label', t); si('wc-task', t); updStats(); onStateChanged(); lg('system', '🎯', `任务目标${t}个`); });
+
+    function dedPct(pct) {
+      const total = GS.totalTasks;
+      const amt = Math.floor(total * pct / 100); if (!amt) return { before: total, after: total, deducted: 0 };
+      let rem = amt;
+      [...GS.players].filter(p => p.tasks > 0).sort((a, b) => b.tasks - a.tasks).forEach(p => { if (!rem) return; const s = Math.min(p.tasks, rem); p.tasks -= s; rem -= s; p.element.querySelector('.tc').textContent = p.tasks; });
+      GS.totalTasks = Math.max(0, GS.totalTasks - amt); sfxDeduct(); updStats(); updTT();
+      lg('deduct', '⬇️', `扣除${pct}%(-${amt}个)，剩${GS.totalTasks}`); onStateChanged();
+      return { before: total, after: GS.totalTasks, deducted: amt };
+    }
+
+    function rkill(n, reason) {
+      const killable = GS.players.filter(p => !p.element.classList.contains('eliminated') && GR.includes(p.element.dataset.role));
+      const kill = killable.sort(() => Math.random() - .5).slice(0, Math.min(n, killable.length));
+      if (!kill.length) { lg('system', '⚠️', '没有可暴毙的存活鹅'); return []; }
+      kill.forEach(p => elimP(p.element)); updStats(); refCands(); refPickers();
+      lg('sabotage', '☠️', `${reason}！${kill.map(p => p.name).join('、')}倒下！`); onStateChanged();
+      return kill;
+    }
+
+    // ===================== SABOTAGE =====================
+    d('trig-sab').addEventListener('click', () => {
+      if (GS.sabTimer) { alert('已有临时任务进行中！'); return; }
+      const desc = d('sab-desc').value || '魔罗鸭发动破坏！'; const dur = +d('sab-dur').value || 120;
+      GS.sabSec = dur; d('sab-desc-disp').textContent = desc; d('sab-banner').classList.add('active'); updSabT(); stopBG(); startSabAlert();
+      GS.sabTimer = setInterval(() => { GS.sabSec--; updSabT(); if (GS.sabSec <= 0) { clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); autoSabFail(); } }, 1000);
+      lg('sabotage', '🚨', `临时任务：「${desc}」限时${dur}秒`); activateTab('dash');
+    });
+
+    function showSabResult(success) {
+      d('sab-result-icon').textContent = success ? '✅' : '💀';
+      d('sab-result-title').textContent = success ? '临时任务完成！' : '临时任务失败！';
+      d('sab-result-msg').textContent = success ? '所有修行者齐心协力，成功守护了道场！' : '时间已到，任务宣告失败。请选择要执行的惩罚（选其一）或取消惩罚：';
+      const punishSection = d('sab-punish-section');
+      const cancelBtn = d('sab-punish-cancel-btn');
+      punishSection.style.display = success ? 'none' : 'block';
+      cancelBtn.style.display = success ? 'none' : 'inline-flex';
+      if (!success) {
+        const pct = parseInt(d('sd-pct').value) || 10;
+        const nKill = parseInt(d('sk-n').value) || 2;
+        d('sab-punish-pct-label').textContent = pct;
+        d('sab-punish-n-label').textContent = nKill;
+        const before = GS.totalTasks;
+        const willDeduct = Math.floor(before * pct / 100);
+        const after = Math.max(0, before - willDeduct);
+        d('sab-deduct-preview').textContent = `当前任务 ${before} 个 → 扣除 ${willDeduct} 个 → 剩余 ${after} 个`;
+        const killable = GS.players.filter(p => !p.element.classList.contains('eliminated') && GR.includes(p.element.dataset.role));
+        const actual = Math.min(nKill, killable.length);
+        const preKill = [...killable].sort(() => Math.random() - .5).slice(0, actual);
+        GS.sabPunishKillList = preKill;
+        d('sab-kill-preview').textContent = preKill.length > 0 ? `将暴毙：${preKill.map(p => p.name).join('、')}（共 ${preKill.length} 名）` : `当前没有可暴毙的存活鹅`;
+        document.querySelectorAll('input[name="sab-punish-radio"]').forEach(r => r.checked = false);
+        document.querySelectorAll('.sab-punish-opt').forEach(o => o.classList.remove('selected'));
+        document.querySelectorAll('input[name="sab-punish-radio"]').forEach(r => {
+          r.onchange = () => { document.querySelectorAll('.sab-punish-opt').forEach(o => o.classList.remove('selected')); if (r.checked) r.closest('.sab-punish-opt').classList.add('selected'); };
+        });
+      }
+      cancelBtn.onclick = () => { hideMod('mod-sab-result'); lg('sabotage', '💀', '临时任务失败！选择不执行额外惩罚。'); if (!GS.muted && !GS.bgmStopped) startBG(); };
+      d('sab-result-ok').onclick = () => {
+        if (success) { hideMod('mod-sab-result'); if (!GS.muted && !GS.bgmStopped) startBG(); return; }
+        const selected = document.querySelector('input[name="sab-punish-radio"]:checked');
+        if (!selected) { alert('请选择一项惩罚，或点击「取消惩罚」！'); return; }
+        const pct = parseInt(d('sd-pct').value) || 10;
+        const before = GS.totalTasks;
+        const willDeduct = Math.floor(before * pct / 100);
+        const after = Math.max(0, before - willDeduct);
+        let previewHTML = '';
+        if (selected.value === 'deduct') {
+          previewHTML = `<div style="padding:8px 0;"><strong style="color:var(--erc);">⬇️ 扣除任务进度 ${pct}%</strong><br>当前任务：${before} 个<br>扣除：<strong style="color:var(--erc);">${willDeduct}</strong> 个<br>剩余：<strong>${after}</strong> 个</div>`;
+        } else {
+          const names = GS.sabPunishKillList.map(p => p.name).join('、');
+          previewHTML = `<div style="padding:8px 0;"><strong style="color:var(--erc);">☠️ 随机暴毙</strong><br>将往生：<strong style="color:var(--erc);">${names || '（无可暴毙对象）'}</strong><br>共 ${GS.sabPunishKillList.length} 名鹅</div>`;
+        }
+        d('sab-punish-preview').innerHTML = previewHTML;
+        d('sab-punish-go').onclick = () => {
+          hideMod('mod-sab-punish-confirm'); hideMod('mod-sab-result');
+          if (selected.value === 'deduct') { dedPct(pct); }
+          else {
+            if (GS.sabPunishKillList.length) {
+              GS.sabPunishKillList.forEach(p => elimP(p.element));
+              updStats(); refCands(); refPickers();
+              lg('sabotage', '☠️', `临时任务失败暴毙！${GS.sabPunishKillList.map(p => p.name).join('、')}倒下！`);
+              onStateChanged();
+            } else { lg('system', '⚠️', '没有可暴毙的存活鹅'); }
+          }
+          GS.sabPunishKillList = [];
+          if (!GS.muted && !GS.bgmStopped) startBG();
+        };
+        d('sab-punish-back').onclick = () => { hideMod('mod-sab-punish-confirm'); setTimeout(() => showMod('mod-sab-result'), 200); };
+        hideMod('mod-sab-result');
+        setTimeout(() => showMod('mod-sab-punish-confirm'), 200);
+      };
+      showMod('mod-sab-result');
+    }
+
+    function autoSabFail() {
+      d('sab-banner').classList.remove('active'); sfxFail();
+      showSabResult(false);
+      lg('sabotage', '💀', '临时任务倒计时结束，宣告失败！');
+    }
+
+    function updSabT() { const m = Math.floor(GS.sabSec / 60), s = GS.sabSec % 60; d('sab-timer').textContent = `${m}:${s.toString().padStart(2, '0')}`; }
+
+    d('sab-ok').addEventListener('click', () => {
+      clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); d('sab-banner').classList.remove('active');
+      if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 400);
+      GS.sabSuccessCount++; updStats(); lg('system', '✅', '临时任务完成！');
+      showSabResult(true); onStateChanged();
+    });
+    d('sab-fail').addEventListener('click', () => {
+      clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); d('sab-banner').classList.remove('active'); autoSabFail();
+    });
+    d('sd-btn').addEventListener('click', () => {
+      const pct = parseInt(d('sd-pct').value) || 10;
+      const before = GS.totalTasks; const willDeduct = Math.floor(before * pct / 100);
+      showC1(`扣除 ${pct}% 任务进度（-${willDeduct}个，剩${Math.max(0, before - willDeduct)}个），确认？`, ok => { if (ok) dedPct(pct); });
+    });
+    d('sk-btn').addEventListener('click', () => { const n = parseInt(d('sk-n').value) || 2; showC1(`随机暴毙 ${n} 名鹅，确认？`, ok => { if (ok) rkill(n, '破坏惩罚暴毙'); }); });
+
+    // ===================== VOTING LOCK =====================
+    function setVotingLocked(locked) {
+      GS.votingLocked = locked;
+      d('vote-locked-msg').style.display = locked ? 'block' : 'none';
+      d('top5-section').style.display = locked ? 'none' : 'block';
+      d('vote-subtitle').textContent = locked ? '（请先开始会议再投票）' : '（直接输入票数）';
+    }
+
+    // ===================== JAIL VOTE BOARD =====================
+    function updJailBoard() {
+      if (GS.votingLocked) return;
+      const alive = GS.players.filter(p => !p.element.classList.contains('eliminated'));
+      if (!alive.length) return;
+      const sorted = [...alive].sort((a, b) => (b.votes || 0) - (a.votes || 0));
+      const top5 = [];
+      for (const p of sorted) {
+        if (top5.length >= 5 && (p.votes || 0) < (top5[top5.length - 1].votes || 0)) break;
+        if (top5.length >= 8) break;
+        top5.push(p);
+      }
+      const maxVotes = Math.max(1, ...top5.map(p => p.votes || 0));
+      let currentRank = 1;
+      const list = d('jail-list'); list.innerHTML = '';
+      top5.forEach((p, i) => {
+        if (i > 0 && (p.votes || 0) < (top5[i - 1].votes || 0)) currentRank = i + 1;
+        const pct = maxVotes > 0 ? Math.round(((p.votes || 0) / maxVotes) * 100) : 0;
+        const rankDisplay = currentRank === 1 ? '🥇' : currentRank === 2 ? '🥈' : currentRank === 3 ? '🥉' : `#${currentRank}`;
+        const isDanger = (p.votes || 0) === maxVotes && maxVotes > 0;
+        const row = document.createElement('div'); row.className = 'jail-row';
+        row.innerHTML = `
+      <div class="jail-rank-col">
+        <div class="jail-bars"><div class="jail-bar-line"></div><div class="jail-bar-line"></div><div class="jail-bar-line"></div><div class="jail-bar-line"></div></div>
+        <div class="jail-rank-icon">${rankDisplay}</div>
+      </div>
+      <div class="jail-name-col"><div>${escHtml(p.name)}</div><div class="jail-sub">${isDanger ? '⚠️ 危险！可能出局' : '候选中…'}</div></div>
+      <div class="jail-meter-col"><div class="jail-meter-track"><div class="jail-meter-fill" style="width:${pct}%"></div></div></div>
+      <div class="jail-votes-col"><div class="jail-vote-num">${p.votes || 0}</div><div class="jail-vote-label">票</div></div>
+    `;
+        list.appendChild(row);
+      });
+      updAllCandBars();
+    }
+
+    function updAllCandBars() {
+      const alive = GS.players.filter(p => !p.element.classList.contains('eliminated'));
+      const mx = Math.max(1, ...alive.map(p => p.votes || 0));
+      alive.forEach(p => { const b = d(`vb-${p.id}`); if (b) b.style.width = Math.round(((p.votes || 0) / mx) * 100) + '%'; });
+    }
+
+    // ===================== MEETING =====================
+    function doStartMeeting() {
+      if (GS.meetingActive && GS.discPaused) {
+        GS.discPaused = false; d('disc-pause').textContent = '⏸ 暂停'; GS.discRun = true;
+        GS.discTimer = setInterval(() => { GS.discSec--; renderDisc(); if (GS.discSec <= 0) { stopDisc(); startMeetingOverAlert(); lg('system', '⏰', '讨论时间结束！'); } }, 1000);
+        resumeMeetingBGM(); return;
+      }
+      if (GS.meetingActive) return;
+      GS.meetingActive = true; GS.discPaused = false;
+      GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null;
+      d('new-meeting').style.display = 'none'; d('end-meeting').style.display = 'inline-flex';
+      d('disc-pause').textContent = '⏸ 暂停';
+      stopDisc(); GS.discSec = +d('disc-min').value * 60 || 180; renderDisc();
+      GS.discRun = true;
+      GS.discTimer = setInterval(() => { GS.discSec--; renderDisc(); if (GS.discSec <= 0) { stopDisc(); startMeetingOverAlert(); lg('system', '⏰', '讨论时间结束！'); } }, 1000);
+      sfxMeetingStart();
+      setTimeout(() => { if (!GS.muted && !GS.bgmStopped) startMeetingBGM(); }, 400);
+      GS.players.forEach(p => { p.votes = 0; p.pkVotes = 0; });
+      d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show');
+      GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first';
+      setVotingLocked(false); refCands(); updJailBoard();
+      lg('system', '🔔', `第${GS.meetRound}轮会议开始`);
+    }
+
+    d('new-meeting').addEventListener('click', doStartMeeting);
+    d('end-meeting').addEventListener('click', () => {
+      stopDisc(); stopMeetingOverAlert(); sfxMeetingEnd();
+      GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false;
+      d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex';
+      d('disc-pause').textContent = '⏸ 暂停';
+      setVotingLocked(true); processMeetingEnd();
+      stopBG(); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300);
+      const fin = GS.meetRound; GS.meetRound++; d('m-round-input').value = GS.meetRound;
+      GS.discSec = +d('disc-min').value * 60 || 180; renderDisc();
+      lg('system', '🏁', `第${fin}轮会议结束`);
+      d('meeting-end-msg').textContent = `第 ${fin} 轮会议已结束，计时器已重置为 ${d('disc-min').value} 分钟。`;
+      showMod('mod-meeting-end'); onStateChanged();
+    });
+    d('meeting-end-ok').addEventListener('click', () => hideMod('mod-meeting-end'));
+    d('m-round-input').addEventListener('change', () => { GS.meetRound = Math.max(1, +d('m-round-input').value || 1); d('m-round-input').value = GS.meetRound; });
+
+    d('disc-pause').addEventListener('click', () => {
+      if (!GS.meetingActive) { alert('请先开始会议！'); return; }
+      if (GS.discRun) {
+        stopDisc(); GS.discPaused = true; d('disc-pause').textContent = '▶ 继续';
+        pauseMeetingBGM(); if (!GS.muted && !GS.bgmStopped) startBG();
+      } else {
+        GS.discPaused = false; d('disc-pause').textContent = '⏸ 暂停'; GS.discRun = true;
+        GS.discTimer = setInterval(() => { GS.discSec--; renderDisc(); if (GS.discSec <= 0) { stopDisc(); startMeetingOverAlert(); lg('system', '⏰', '讨论时间结束！'); } }, 1000);
+        stopBG(); if (!GS.muted && !GS.bgmStopped) startMeetingBGM();
+      }
+    });
+    d('disc-reset').addEventListener('click', () => { stopDisc(); stopMeetingOverAlert(); GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); GS.discPaused = false; d('disc-pause').textContent = '⏸ 暂停'; });
+
+    function renderDisc() { const sec = Math.max(0, GS.discSec); const m = Math.floor(sec / 60), s = sec % 60; const e = d('disc-clk'); e.textContent = `${m}:${s.toString().padStart(2, '0')}`; e.classList.toggle('urgent', sec <= 30); }
+    function stopDisc() { if (GS.discTimer) { clearInterval(GS.discTimer); GS.discTimer = null; GS.discRun = false; } }
+
+    // ============================================================
+    // FIX 2 & 3: CORRECTED VOTING LOGIC
+    // Rule:
+    //   Round ends → find max votes among alive players
+    //   If one clear winner (1st place) → eliminate them (1st elim)
+    //     → Then find 2nd-highest vote count among remaining alive
+    //     → If 2+ players tied at 2nd-highest → only THOSE tied players go to 2nd vote
+    //     → If one clear 2nd → eliminate them directly (no PK needed)
+    //     → If nobody else has votes → no 2nd elim
+    //   If multiple tied at 1st → PK among tied players → after PK resolves 1st elim
+    //     → Then proceed to 2nd vote from remaining alive (find 2nd-highest among them)
+    // ============================================================
+
+    function processMeetingEnd() {
+      const alive = GS.players.filter(p => !p.element.classList.contains('eliminated'));
+      if (!alive.length) return;
+      const maxVotes = Math.max(0, ...alive.map(p => p.votes || 0));
+      if (maxVotes <= 0) {
+        d('top-cands').innerHTML = '<span style="color:var(--ts);">本轮无有效票数，无人出局。</span>';
+        d('vote-rb').classList.add('show'); d('pk-section').classList.remove('show');
+        return;
+      }
+      const topPlayers = alive.filter(p => (p.votes || 0) === maxVotes);
+      if (topPlayers.length === 1) {
+        // Clear winner → first elim
+        const winner = topPlayers[0];
+        d('top-cands').innerHTML = `<div class="tcc-chip">💀 ${winner.name} — ${winner.votes}票 · 第一位往生</div>`;
+        d('vote-rb').classList.add('show');
+        elimP(winner.element);
+        GS.firstElimDone = true; GS.meetingElimCount = 1; GS.firstElimPlayer = winner;
+        lg('eliminate', '🗳️', `${winner.name} 被投票淘汰（${winner.votes}票）— 第一位出局`);
+        updStats(); refCands(); refPickers(); onStateChanged();
+        // Now set up second vote
+        setupSecondVote(alive.filter(p => p.id !== winner.id), maxVotes);
+      } else {
+        // Tied at 1st → PK first
+        d('top-cands').innerHTML = topPlayers.map(p => `<div class="tcc-chip tie">⚖️ ${p.name} — ${p.votes}票（加赛决第一名）</div>`).join('');
+        d('vote-rb').classList.add('show');
+        GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; GS.pkContext = 'first';
+        startPKRound(topPlayers);
+      }
+    }
+
+    // FIX 2: setupSecondVote takes the remaining alive players and the FIRST round's max votes
+    // It finds who is at 2nd place (next highest among remaining)
+    function setupSecondVote(remainingAlive, firstMaxVotes) {
+      if (!remainingAlive || !remainingAlive.length) {
+        d('pk-section').classList.remove('show'); return;
+      }
+      // Find 2nd highest vote count among remaining alive
+      const maxV2 = Math.max(0, ...remainingAlive.map(p => p.votes || 0));
+      if (maxV2 <= 0) {
+        // No one else has votes → show message, no 2nd elim
+        d('pk-section').classList.add('show');
+        d('pk-section-title').textContent = '🗳️ 第二轮投票';
+        d('pk-context-msg').textContent = '暂无其他玩家有票数。请手动进行第二轮投票：';
+        // Show all remaining alive for second vote input
+        buildSecondVoteCandList(remainingAlive);
+        lg('system', '🗳️', '第一位已出局！请进行第二轮投票（投出第二位）…');
+        return;
+      }
+      const secondPlayers = remainingAlive.filter(p => (p.votes || 0) === maxV2);
+      if (secondPlayers.length === 1) {
+        // One clear 2nd place → eliminate directly
+        const doomed = secondPlayers[0];
+        elimP(doomed.element);
+        GS.meetingElimCount = 2;
+        d('top-cands').innerHTML += ' <div class="tcc-chip">💀 ' + doomed.name + ' — ' + doomed.votes + '票 · 第二位往生</div>';
+        lg('eliminate', '🗳️', `${doomed.name} 第二位被淘汰（${doomed.votes}票）`);
+        updStats(); refCands(); refPickers(); onStateChanged();
+        d('pk-section').classList.remove('show');
+        sfxPKEnd();
+        d('pk-end-title').textContent = '本轮结束！';
+        d('pk-end-msg').textContent = '本轮会议共淘汰两位修行者！';
+        d('pk-end-elim-info').innerHTML = `<strong style="color:#A03030;">💀 第二位往生者：</strong>${doomed.name}`;
+        d('pk-end-ok').onclick = () => hideMod('mod-pk-end');
+        showMod('mod-pk-end');
+      } else {
+        // Multiple tied at 2nd → PK among those tied
+        d('top-cands').innerHTML += secondPlayers.map(p => `<div class="tcc-chip tie">⚖️ ${p.name} — ${p.votes}票（加赛决第二名）</div>`).join('');
+        GS.pkContext = 'second';
+        startPKRound(secondPlayers);
+        lg('system', '⚔️', `第二轮加赛！${secondPlayers.map(p => p.name).join('、')} 平票，进入加赛`);
+      }
+    }
+
+    // Second vote: manual vote input for all remaining players
+    function buildSecondVoteCandList(players) {
+      // Reset votes for these players for second round
+      players.forEach(p => { p.pkVotes = 0; });
+      const list = d('pk-cand-list'); list.innerHTML = '';
+      players.forEach(p => {
+        const row = document.createElement('div'); row.className = 'cr';
+        row.innerHTML = `<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="sv-bar-${p.id}" style="width:0%"></div></div><div class="vst"><input type="number" class="vnum-input" id="sv-in-${p.id}" value="0" min="0"></div>`;
+        list.appendChild(row);
+        const inp = row.querySelector(`#sv-in-${p.id}`);
+        inp.addEventListener('focus', function () { if (this.value === '0') this.value = ''; });
+        inp.addEventListener('blur', function () { if (this.value === '' || isNaN(this.value)) this.value = '0'; p.pkVotes = parseInt(this.value) || 0; updSecondVoteBars(players); });
+        inp.addEventListener('input', () => { p.pkVotes = parseInt(inp.value) || 0; updSecondVoteBars(players); });
+      });
+    }
+
+    function updSecondVoteBars(players) {
+      const mx = Math.max(1, ...players.map(p => p.pkVotes || 0));
+      players.forEach(p => { const b = d(`sv-bar-${p.id}`); if (b) b.style.width = Math.round(((p.pkVotes || 0) / mx) * 100) + '%'; });
+    }
+
+    function startPKRound(players) {
+      GS.pkRound = (GS.pkRound || 0) + 1; GS.pkMode = true; GS.pkPlayers = players;
+      players.forEach(p => { p.pkVotes = 0; });
+      const isSecond = GS.pkContext === 'second';
+      d('pk-section').classList.add('show');
+      d('pk-section-title').textContent = isSecond ? '🔁 第二位出局加赛' : '🔁 加赛投票进行中';
+      d('pk-context-msg').textContent = isSecond ? '以下玩家加赛决出第二位：' : '以下玩家进入加赛：';
+      d('pk-confirm-btn').textContent = isSecond ? '⚔️ 确认加赛淘汰（第二位）' : '⚔️ 确认加赛淘汰';
+      buildPKCandList(players);
+      sfxPKStart();
+      d('pk-round-badge').textContent = `第 ${GS.pkRound} 轮加赛`;
+      d('pk-alert-title').textContent = isSecond ? '第二位出局加赛！' : '进入加赛环节！';
+      d('pk-alert-context').textContent = isSecond ? '以下玩家加赛决出第二位出局者！' : '以下玩家票数相同，需要加赛！';
+      const pkAlert = d('pk-alert-players'); pkAlert.innerHTML = '';
+      players.forEach(p => { const chip = document.createElement('div'); chip.className = 'tcc-chip'; chip.textContent = `${p.name} — 0票`; pkAlert.appendChild(chip); });
+      showMod('mod-pk-alert');
+      lg('system', '⚔️', `${isSecond ? '第二轮' : ''}加赛第${GS.pkRound}轮！${players.map(p => p.name).join('、')} 进入加赛`);
+    }
+
+    d('pk-alert-ok').addEventListener('click', () => hideMod('mod-pk-alert'));
+
+    d('pk-skip-btn').addEventListener('click', () => {
+      showC1('玩家放弃本轮加赛/投票？将不产生更多出局者。', ok => {
+        if (!ok) return;
+        GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first';
+        d('pk-section').classList.remove('show');
+        lg('system', '🚫', '玩家放弃投票，本轮不再产生出局者。'); onStateChanged();
+      });
+    });
+
+    // FIX 3: buildPKCandList always uses pkVotes, with proper bar IDs
+    function buildPKCandList(players) {
+      const list = d('pk-cand-list'); list.innerHTML = '';
+      players.forEach(p => {
+        p.pkVotes = 0;
+        const row = document.createElement('div'); row.className = 'cr';
+        // FIX 3: Use pkb- prefix for bars and pkvin- for inputs, properly wired
+        row.innerHTML = `<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="pkb-${p.id}" style="width:0%"></div></div><div class="vst"><input type="number" class="vnum-input" id="pkvin-${p.id}" value="0" min="0"></div>`;
+        list.appendChild(row);
+        const inp = row.querySelector(`#pkvin-${p.id}`);
+        inp.addEventListener('focus', function () { if (this.value === '0') this.value = ''; });
+        inp.addEventListener('blur', function () { if (this.value === '' || isNaN(this.value)) this.value = '0'; p.pkVotes = parseInt(this.value) || 0; updPKBars(); });
+        inp.addEventListener('input', () => { p.pkVotes = Math.max(0, parseInt(inp.value) || 0); updPKBars(); onStateChanged(); });
+      });
+    }
+
+    // FIX 3: updPKBars properly reads pkVotes
+    function updPKBars() {
+      if (!GS.pkPlayers || !GS.pkPlayers.length) return;
+      const mx = Math.max(1, ...GS.pkPlayers.map(p => p.pkVotes || 0));
+      GS.pkPlayers.forEach(p => {
+        const b = d(`pkb-${p.id}`);
+        if (b) b.style.width = Math.round(((p.pkVotes || 0) / mx) * 100) + '%';
+      });
+    }
+
+    d('pk-confirm-btn').addEventListener('click', () => {
+      // Check if we're in second-vote manual mode (buildSecondVoteCandList was used, not PK)
+      if (!GS.pkMode) {
+        // We're in manual second-vote mode (no PK)
+        // Find players from pk-cand-list with sv-in- IDs
+        const aliveNow = GS.players.filter(p => !p.element.classList.contains('eliminated'));
+        const maxSV = Math.max(0, ...aliveNow.map(p => p.pkVotes || 0));
+        if (maxSV <= 0) { alert('第二轮尚无有效票数！'); return; }
+        const topSV = aliveNow.filter(p => (p.pkVotes || 0) === maxSV);
+        if (topSV.length === 1) {
+          const doomed = topSV[0];
+          elimP(doomed.element);
+          GS.meetingElimCount = 2;
+          d('top-cands').innerHTML += `<div class="tcc-chip">💀 ${doomed.name} — ${doomed.pkVotes}票 · 第二位往生</div>`;
+          lg('eliminate', '🗳️', `${doomed.name} 第二轮被淘汰（${doomed.pkVotes}票）`);
+          d('pk-section').classList.remove('show');
+          updStats(); refCands(); refPickers(); onStateChanged(); sfxPKEnd();
+          d('pk-end-title').textContent = '第二轮结束！'; d('pk-end-msg').textContent = '本轮会议共淘汰两位修行者！';
+          d('pk-end-elim-info').innerHTML = `<strong style="color:#A03030;">💀 第二位往生者：</strong>${doomed.name}`;
+          d('pk-end-ok').onclick = () => hideMod('mod-pk-end'); showMod('mod-pk-end');
+        } else {
+          // Tied in second vote manual → PK
+          GS.pkContext = 'second';
+          startPKRound(topSV);
+        }
+        return;
+      }
+
+      // Regular PK mode
+      if (!GS.pkPlayers || !GS.pkPlayers.length) return;
+      const maxPK = Math.max(0, ...GS.pkPlayers.map(p => p.pkVotes || 0));
+      if (maxPK <= 0) { alert('加赛尚无投票！'); return; }
+      const pkTop = GS.pkPlayers.filter(p => (p.pkVotes || 0) === maxPK);
+      sfxPKEnd();
+
+      if (pkTop.length > 1) {
+        // Still tied → next PK round (same context)
+        d('pk-section').classList.remove('show');
+        setTimeout(() => startPKRound(pkTop), 400);
+        return;
+      }
+
+      const doomed = pkTop[0];
+      const isSecond = GS.pkContext === 'second';
+      elimP(doomed.element);
+      lg('eliminate', '⚔️', `加赛结束：${doomed.name} 被淘汰（${doomed.pkVotes}票）— ${isSecond ? '第二位出局' : '第一位出局（加赛）'}`);
+      GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0;
+      updStats(); refCands(); refPickers(); onStateChanged();
+
+      if (!isSecond) {
+        // First elim via PK done → now set up second vote
+        GS.firstElimDone = true; GS.meetingElimCount = 1; GS.firstElimPlayer = doomed;
+        d('pk-section').classList.remove('show');
+        d('top-cands').innerHTML += `<div class="tcc-chip">💀 ${doomed.name} · 第一位往生（加赛）</div>`;
+        const remainingAlive = GS.players.filter(p => !p.element.classList.contains('eliminated'));
+        const firstMaxVotes = Math.max(0, ...(GS.players.map(p => p.votes || 0)));
+        d('pk-end-title').textContent = '加赛结束！';
+        d('pk-end-msg').textContent = '第一位出局者已确定！接下来请进行第二轮投票。';
+        d('pk-end-elim-info').innerHTML = `<strong style="color:#A03030;">💀 第一位往生者：</strong>${doomed.name}`;
+        d('pk-end-ok').onclick = () => { hideMod('mod-pk-end'); GS.pkContext = 'second'; setupSecondVote(remainingAlive, firstMaxVotes); };
+        showMod('mod-pk-end');
+      } else {
+        // Second elim resolved
+        GS.meetingElimCount = 2; GS.firstElimDone = false;
+        d('pk-section').classList.remove('show');
+        d('top-cands').innerHTML += `<div class="tcc-chip">💀 ${doomed.name} · 第二位往生（加赛）</div>`;
+        d('pk-end-title').textContent = '会议结束！'; d('pk-end-msg').textContent = '本轮会议共淘汰两位修行者！';
+        d('pk-end-elim-info').innerHTML = `<strong style="color:#A03030;">💀 第二位往生者：</strong>${doomed.name}`;
+        d('pk-end-ok').onclick = () => hideMod('mod-pk-end'); showMod('mod-pk-end');
+      }
+    });
+
+    d('pk-end-ok').addEventListener('click', () => hideMod('mod-pk-end'));
+    d('pk-reset-btn').addEventListener('click', () => {
+      if (GS.pkPlayers) { GS.pkPlayers.forEach(p => { p.pkVotes = 0; const inp = d(`pkvin-${p.id}`); if (inp) inp.value = 0; }); updPKBars(); }
+      // Also reset second vote bars
+      GS.players.forEach(p => { const b = d(`sv-bar-${p.id}`); if (b) b.style.width = '0%'; const inp = d(`sv-in-${p.id}`); if (inp) inp.value = 0; p.pkVotes = 0; });
+    });
+
+    // ===================== PICKERS =====================
+    function refPickers() {
+      const alive = GS.players.filter(p => !p.element.classList.contains('eliminated'));
+      GS.selSher = null; GS.selAcc = null; GS.selAnnE = null; GS.selAnnR = null;
+      ['sher-picker', 'acc-picker'].forEach(gid => {
+        const g = d(gid); if (!g) return; g.innerHTML = '';
+        alive.forEach(p => {
+          const c = document.createElement('div'); c.className = 'cpc'; c.dataset.pid = p.id; c.textContent = p.name;
+          c.addEventListener('click', () => {
+            if (gid === 'sher-picker') { g.querySelectorAll('.cpc').forEach(x => x.classList.remove('sel-s')); c.classList.add('sel-s'); GS.selSher = p.id; }
+            else { g.querySelectorAll('.cpc').forEach(x => x.classList.remove('sel-a')); c.classList.add('sel-a'); GS.selAcc = p.id; }
+          }); g.appendChild(c);
+        });
+      });
+      const annElimG = d('ann-elim-picker'); if (!annElimG) return; annElimG.innerHTML = '';
+      GS.players.forEach(p => {
+        const dead = p.element.classList.contains('eliminated');
+        const c = document.createElement('div'); c.className = 'anc' + (dead ? ' es' : ''); c.dataset.pid = p.id; c.textContent = p.name + (dead ? ' 💀' : '');
+        if (!dead) { c.addEventListener('click', () => { annElimG.querySelectorAll('.anc').forEach(x => x.classList.remove('se')); c.classList.add('se'); GS.selAnnE = p.id; }); }
+        annElimG.appendChild(c);
+      });
+      const annResG = d('ann-res-picker'); if (!annResG) return; annResG.innerHTML = '';
+      GS.players.forEach(p => {
+        const dead = p.element.classList.contains('eliminated');
+        const c = document.createElement('div'); c.className = 'anc' + (!dead ? ' es' : ''); c.dataset.pid = p.id; c.textContent = p.name + (!dead ? ' 💚' : '');
+        if (dead) { c.addEventListener('click', () => { annResG.querySelectorAll('.anc').forEach(x => x.classList.remove('sr2')); c.classList.add('sr2'); GS.selAnnR = p.id; }); }
+        annResG.appendChild(c);
+      });
+    }
+
+    function refCands() {
+      const list = d('cand-list'); if (!list) return; list.innerHTML = '';
+      const alive = GS.players.filter(p => !p.element.classList.contains('eliminated'));
+      if (!alive.length) { list.innerHTML = '<div style="color:var(--ts);font-size:.84rem;padding:10px;">暂无存活修行者</div>'; return; }
+      alive.forEach(p => {
+        const row = document.createElement('div'); row.className = 'cr';
+        // FIX 3: Progress bars use vb- prefix, properly wired to votes
+        row.innerHTML = `<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="vb-${p.id}" style="width:${Math.max(0, Math.round(((p.votes || 0) / Math.max(1, ...alive.map(a => a.votes || 0))) * 100))}%"></div></div><div class="vst"><input type="number" class="vnum-input" id="vin-${p.id}" value="${p.votes || 0}" min="0"></div>`;
+        list.appendChild(row);
+        const inp = row.querySelector(`#vin-${p.id}`);
+        inp.addEventListener('focus', function () { if (this.value === '0') this.value = ''; });
+        inp.addEventListener('blur', function () { if (this.value === '' || isNaN(this.value)) this.value = '0'; p.votes = parseInt(this.value) || 0; updJailBoard(); onStateChanged(); });
+        inp.addEventListener('input', () => {
+          if (GS.votingLocked) { alert('请先开始会议！'); inp.value = 0; return; }
+          p.votes = Math.max(0, parseInt(inp.value) || 0); updJailBoard(); onStateChanged();
+        });
+      });
+      setVotingLocked(GS.votingLocked);
+    }
+
+    d('reset-votes').addEventListener('click', () => {
+      GS.players.forEach(p => {
+        p.votes = 0; p.pkVotes = 0;
+        const inp = d(`vin-${p.id}`); if (inp) inp.value = 0;
+        const pkInp = d(`pkvin-${p.id}`); if (pkInp) pkInp.value = 0;
+        const svInp = d(`sv-in-${p.id}`); if (svInp) svInp.value = 0;
+      });
+      d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show');
+      GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first';
+      GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null;
+      refCands(); updJailBoard(); onStateChanged();
+    });
+
+    d('verify-btn').addEventListener('click', () => {
+      const sid = GS.selSher, aid = GS.selAcc;
+      if (!sid || !aid) { alert('请选择护法鹅和被指认者！'); return; } if (sid === aid) { alert('不能指认自己！'); return; }
+      const sher = GS.players.find(p => p.id === sid), acc = GS.players.find(p => p.id === aid); if (!sher || !acc) return;
+      if (sher.element.dataset.role !== 'sheriff') { showResult(false, '⚠️', '身份不符', `${sher.name} 不是护法鹅！`, ''); return; }
+      const ar = acc.element.dataset.role, isDuck = ar === 'duck';
+      if (isDuck) { showResult(true, '✅', '挑战成功！', `${acc.name} 是【${RN[ar]}】！`, `→ 鸭子往生，护法鹅获胜！`, () => { elimP(acc.element); updStats(); refCands(); refPickers(); lg('eliminate', '⚔️', `护法鹅挑战成功！${acc.name}往生！`); onStateChanged(); }); }
+      else { showResult(false, '❌', '挑战失败！', `${acc.name} 不是鸭子！`, `→ 护法鹅 ${sher.name} 自我往生！`, () => { elimP(sher.element); updStats(); refCands(); refPickers(); lg('eliminate', '⚔️', `护法鹅挑战失败！${sher.name}自我往生！`); onStateChanged(); }); }
+    });
+
+    d('ann-elim-btn').addEventListener('click', () => {
+      if (!GS.selAnnE) { alert('请先选择存活的修行者！'); return; }
+      const p = GS.players.find(x => x.id === GS.selAnnE); if (!p) return;
+      if (p.element.classList.contains('eliminated')) { alert('该修行者已往生！'); return; }
+      showC1(`宣布 ${p.name} 往生？`, ok => { if (!ok) return; elimP(p.element); updStats(); refCands(); refPickers(); onStateChanged(); });
+    });
+    d('ann-res-btn').addEventListener('click', () => {
+      if (!GS.selAnnR) { alert('请先选择已往生的修行者！'); return; }
+      const p = GS.players.find(x => x.id === GS.selAnnR); if (!p) return;
+      if (!p.element.classList.contains('eliminated')) { alert('该修行者仍然存活！'); return; }
+      showC1(`宣布 ${p.name} 重生？`, ok => { if (!ok) return; resP(p.element); updStats(); refCands(); refPickers(); onStateChanged(); });
+    });
+
+    // ===================== SETUP BUTTONS =====================
+    d('assign-roles').addEventListener('click', () => { if (!GS.players.length) { alert('请先配置队伍！'); return; } showC1('确定随机分配身份？所有现有身份将被重新分配。', ok => { if (ok) assignRoles(); }); });
+    d('manual-toggle').addEventListener('click', () => { GS.manualMode = !GS.manualMode; const btn = d('manual-toggle'); btn.innerHTML = GS.manualMode ? '🔓 退出手动配置' : '✋ 手动配置身份'; btn.className = GS.manualMode ? 'btn bp' : 'btn bs'; if (GS.manualMode) activateTab('players'); });
+    d('show-roles').addEventListener('click', () => showC1('确定显示所有身份？', ok => { if (ok) showAllRoles(); }));
+    d('hide-roles').addEventListener('click', () => showC1('确定隐藏所有身份？', ok => { if (ok) hideAllRoles(); }));
+    d('show-neutral').addEventListener('click', () => { document.querySelectorAll('.nr').forEach(e => e.style.display = 'flex'); d('show-neutral').style.display = 'none'; d('hide-neutral').style.display = 'inline-flex'; });
+    d('hide-neutral').addEventListener('click', () => { document.querySelectorAll('.nr').forEach(e => e.style.display = 'none'); d('show-neutral').style.display = 'inline-flex'; d('hide-neutral').style.display = 'none'; });
+
+    // ===================== NEW GAME =====================
+    d('new-game-btn').addEventListener('click', () => showMod('mod-newgame'));
+    d('ng-cancel').addEventListener('click', () => hideMod('mod-newgame'));
+    d('ng-confirm1').addEventListener('click', () => { hideMod('mod-newgame'); doNewGame(); });
+
+    function doNewGame() {
+      if (GS.sabTimer) { clearInterval(GS.sabTimer); GS.sabTimer = null; }
+      stopSabAlert(); d('sab-banner').classList.remove('active');
+      stopDisc(); stopMeetingOverAlert(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false;
+      d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex';
+      d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); stopBG();
+      GS.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); buildTeamConfigUI();
+      ['cnt-goose', 'cnt-det', 'cnt-sher', 'cnt-duck', 'cnt-pig', 'cnt-dodo'].forEach(id => { const el = d(id); if (el) el.value = 0; });
+      document.getElementById('teams-container').innerHTML = '';
+      GS.players = []; GS.totalTasks = 0; GS.meetRound = 1; GS.sabSuccessCount = 0;
+      GS.rolesVis = false; GS.pigReveal = false; GS.dodoReveal = false;
+      GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first'; GS.taskTarget = 80;
+      GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; GS.sabPunishKillList = [];
+      d('m-round-input').value = 1; d('tgt-input').value = 80; si('tgt-label', 80); si('wc-task', 80);
+      d('sl-pig').textContent = '秘密 🔒'; d('sl-dodo').textContent = '秘密 🔒';
+      d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show');
+      d('ev-log').innerHTML = '';
+      GS.discSec = +d('disc-min').value * 60 || 180; renderDisc();
+      updStats(); updTT(); refCands(); refPickers();
+      d('step2-btn').disabled = true; d('step3-btn').disabled = true; goToStep(1);
+      if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300);
+      onStateChanged(); lg('system', '🌅', '新游戏开始！所有进度已清空。');
+    }
+
+    // ===================== END GAME =====================
+    d('end-game-btn').addEventListener('click', () => showMod('mod-eg-confirm'));
+    d('egc-no').addEventListener('click', () => hideMod('mod-eg-confirm'));
+    d('egc-yes').addEventListener('click', () => { hideMod('mod-eg-confirm'); setTimeout(() => showMod('mod-eg-pick'), 200); });
+    d('eg-cancel').addEventListener('click', () => hideMod('mod-eg-pick'));
+    d('win-goose').addEventListener('click', () => { hideMod('mod-eg-pick'); triggerWin('goose'); });
+    d('win-duck').addEventListener('click', () => { hideMod('mod-eg-pick'); triggerWin('duck'); });
+    d('win-pigeon').addEventListener('click', () => { hideMod('mod-eg-pick'); triggerWin('pigeon'); });
+    function triggerWin(side) {
+      const M = { goose: { icon: '🪿', title: '鹅阵营获胜！', msg: '光明战胜了黑暗！' }, duck: { icon: '🦆', title: '魔罗鸭获胜！', msg: '黑暗笼罩了道场！' }, pigeon: { icon: '🕊️', title: '鸽阵营获胜！', msg: '秘密使命完成！' } };
+      const m = M[side]; d('win-icon').textContent = m.icon; d('win-title').textContent = m.title; d('win-msg').textContent = m.msg;
+      showMod('mod-win'); stopBG(); sfxWin(); launchFireworks(); lg('system', '🏆', m.title);
+    }
+    d('win-ok').addEventListener('click', () => { hideMod('mod-win'); stopFireworks(); if (!GS.muted && !GS.bgmStopped) startBG(); });
+
+    // ===================== LOG =====================
+    d('clr-log').addEventListener('click', () => showC1('确定清除所有日志？', ok => { if (!ok) return; d('ev-log').innerHTML = ''; lg('system', '🧹', '日志已清除'); }));
+
+    // ===================== ROOM BUTTONS (FIX 4: direct join) =====================
+    d('join-room-btn').addEventListener('click', () => {
+      d('my-room-code-display').textContent = myRoomId;
+      d('join-room-input').value = '';
+      showMod('mod-join');
+    });
+    d('join-cancel').addEventListener('click', () => hideMod('mod-join'));
+    d('join-confirm').addEventListener('click', () => {
+      const id = d('join-room-input').value.trim().replace(/\s/g, '');
+      if (!/^\d{6}$/.test(id)) { alert('请输入6位数字房间号'); return; }
+      if (id === myRoomId) { alert('不能加入自己的房间！'); return; }
+      hideMod('mod-join');
+      directJoin(id);
+    });
+    d('leave-room-btn').addEventListener('click', () => showMod('mod-leave-room'));
+    d('leave-cancel').addEventListener('click', () => hideMod('mod-leave-room'));
+    d('leave-confirm').addEventListener('click', () => { hideMod('mod-leave-room'); leaveRoom(); });
+
+    // ===================== ROLE MODAL =====================
+    document.querySelectorAll('.rsb').forEach(btn => btn.addEventListener('click', () => {
+      const c = GS.curCard; if (!c) return; setRole(c, btn.dataset.role);
+      updStats(); refCands(); refPickers(); hideMod('mod-role');
+      onStateChanged(); GS.curCard = null;
+    }));
+    d('role-cancel').addEventListener('click', () => { hideMod('mod-role'); GS.curCard = null; });
+
+    // ===================== RESULT MODAL =====================
+    let resCB = null;
+    function showResult(ok, icon, title, msg, sub, cb) {
+      d('res-mod-inner').className = 'mod' + (ok ? ' smod' : ' fmod');
+      d('res-icon').textContent = icon; d('res-msg').textContent = title; d('res-sub').textContent = msg + (sub ? '\n' + sub : '');
+      resCB = cb || null; showMod('mod-result');
+    }
+    d('result-ok').addEventListener('click', () => { hideMod('mod-result'); if (resCB) resCB(); resCB = null; });
+
+    // ===================== MODALS =====================
+    function showMod(id) { const m = d(id); m.style.display = 'flex'; setTimeout(() => m.classList.add('show'), 10); }
+    function hideMod(id) { const m = d(id); m.classList.remove('show'); setTimeout(() => m.style.display = 'none', 220); }
+    function showC1(msg, cb) { d('c1-msg').textContent = msg; showMod('mod-c1'); d('c1-yes').onclick = () => { hideMod('mod-c1'); cb(true); }; d('c1-no').onclick = () => { hideMod('mod-c1'); cb(false); }; }
+    document.querySelectorAll('.mo').forEach(o => o.addEventListener('click', e => { if (e.target === o) { o.classList.remove('show'); setTimeout(() => o.style.display = 'none', 220); if (o.id === 'mod-role') GS.curCard = null; } }));
+
+    // ===================== TABS =====================
+    document.querySelectorAll('.tbtn').forEach(b => b.addEventListener('click', () => activateTab(b.dataset.tab)));
+    function activateTab(id) { document.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === id)); document.querySelectorAll('.tc').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`)); }
+
+    // ===================== FIX 1: FLOATING EMOJIS - limit count, random positions =====================
+    const FA_EMOJIS = ['🪿', '🦆', '🕊️', '🪷', '☸️'];
+    const FA_MAX = 6; // max floaters on screen at once
+
+    function spawnFA() {
+      // Limit total floaters to avoid accumulation
+      const existing = d('faw').querySelectorAll('.fa');
+      if (existing.length >= FA_MAX) return;
+
+      const e = document.createElement('div');
+      e.className = 'fa';
+      e.textContent = FA_EMOJIS[Math.floor(Math.random() * FA_EMOJIS.length)];
+      // Random vertical position across the full screen height
+      e.style.top = Math.floor(Math.random() * window.innerHeight) + 'px';
+      e.style.left = '-80px';
+      // Random speed: 18-32s
+      const dur = 18 + Math.floor(Math.random() * 14);
+      e.style.animationDuration = dur + 's';
+      // Random size variation
+      e.style.fontSize = (1.4 + Math.random() * 0.8).toFixed(1) + 'rem';
+      // Random opacity
+      e.style.opacity = '0';
+      d('faw').appendChild(e);
+      e.addEventListener('animationend', () => { if (e.parentNode) e.remove(); });
+    }
+
+    // Spawn with controlled interval - not too frequent
+    setInterval(() => {
+      if (Math.random() < 0.4) spawnFA();
+    }, 8000);
+    // Initial spawns staggered
+    [2000, 6000, 11000].forEach(t => setTimeout(spawnFA, t));
+
+    // ===================== FIREWORKS =====================
+    let fwIv = null, fwTo = null;
+    function launchFireworks() { const ov = d('fw-ov'); ov.style.display = 'block'; ov.innerHTML = ''; let cnt = 0; fwIv = setInterval(() => { cnt++; if (cnt > 110) { stopFireworks(); return; } spawnConfetti(ov); if (cnt % 3 === 0) spawnBurst(ov); }, 100); fwTo = setTimeout(stopFireworks, 15000); }
+    function stopFireworks() { if (fwIv) { clearInterval(fwIv); fwIv = null; } if (fwTo) { clearTimeout(fwTo); fwTo = null; } setTimeout(() => { const ov = d('fw-ov'); if (ov) { ov.style.display = 'none'; ov.innerHTML = ''; } }, 2000); }
+    const COLORS = ['#C4963A', '#D05050', '#5A9E6A', '#87CEEB', '#C87AA0', '#E8C870', '#A05050', '#8A5A9A', '#D07020', '#5A8A70'];
+    function rnd(a, b) { return a + Math.random() * (b - a); }
+    function spawnConfetti(ov) { for (let i = 0; i < 6; i++) { const p = document.createElement('div'); p.className = 'cfp'; const dur = rnd(2.5, 5); p.style.cssText = `left:${rnd(0, window.innerWidth)}px;top:-20px;background:${COLORS[0 | Math.random() * COLORS.length]};width:${rnd(6, 13)}px;height:${rnd(6, 13)}px;border-radius:${Math.random() > .5 ? '50%' : '2px'};animation-duration:${dur}s;animation-delay:${rnd(0, .4)}s;`; ov.appendChild(p); setTimeout(() => { if (p.parentNode) p.remove(); }, (dur + 1.2) * 1000); } }
+    function spawnBurst(ov) { const x = rnd(30, window.innerWidth - 30), y = rnd(30, window.innerHeight * .55); for (let i = 0; i < 14; i++) { const b = document.createElement('div'); b.className = 'fwb'; const ang = (i / 14) * Math.PI * 2, dist = rnd(45, 85); const dur = rnd(.5, 1); b.style.cssText = `left:${x + Math.cos(ang) * dist}px;top:${y + Math.sin(ang) * dist}px;background:${COLORS[0 | Math.random() * COLORS.length]};width:${rnd(5, 9)}px;height:${rnd(5, 9)}px;animation-duration:${dur}s;`; ov.appendChild(b); setTimeout(() => { if (b.parentNode) b.remove(); }, (dur + .5) * 1000); } }
+
+    // ===================== INIT =====================
+    document.addEventListener('DOMContentLoaded', () => {
+      d('init-t').textContent = gt();
+      document.querySelectorAll('.nr').forEach(e => e.style.display = 'none');
+      buildTeamConfigUI();
+      renderDisc();
+      buildMusicGrid();
+      setupNumInputs();
+      d('step2-btn').disabled = true;
+      d('step3-btn').disabled = true;
+      initMyRoom();
+      d('my-room-code-display').textContent = myRoomId;
+      loadState();
+      if (GS.players.length > 0) { d('step2-btn').disabled = false; d('step3-btn').disabled = false; }
+      if (GS.bgmStopped) d('bgm-stop-btn').textContent = '▶ 开启音乐';
+      setVotingLocked(true);
+      const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
+      document.body.addEventListener('click', once);
+      lg('system', '🏮', `控制台启动 · 我的房间号：${myRoomId}`);
+    });
+  </script>
+</body>
+
+</html>
