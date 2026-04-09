@@ -3409,61 +3409,27 @@
 
   <script>
     // ===================== PEER ID =====================
-    let myPeerId = localStorage.getItem('gduck_peer_id');
-    if (!myPeerId) { myPeerId = Math.random().toString(36).slice(2, 10); localStorage.setItem('gduck_peer_id', myPeerId); }
+    let myPeerId, myRoomId;
+    try {
+      myPeerId = localStorage.getItem('gduck_peer_id');
+      if (!myPeerId) { 
+        myPeerId = Math.random().toString(36).slice(2, 10); 
+        localStorage.setItem('gduck_peer_id', myPeerId); 
+      }
 
-    let myRoomId = localStorage.getItem('gduck_my_room_id');
-    if (!myRoomId) { myRoomId = Math.floor(100000 + Math.random() * 900000).toString(); localStorage.setItem('gduck_my_room_id', myRoomId); }
-
-    // ===================== GAME STATE =====================
-    const DEFAULT_TEAMS = [
-      { name: '布施', count: 0 }, { name: '持戒', count: 0 }, { name: '忍辱', count: 0 },
-      { name: '精进', count: 0 }, { name: '禅定', count: 0 }, { name: '般若', count: 0 }
-    ];
-
-    const GS = {
-      teams: JSON.parse(JSON.stringify(DEFAULT_TEAMS)),
-      players: [], rolesVis: false, manualMode: false, curCard: null,
-      totalTasks: 0, taskTarget: 80,
-      sabTimer: null, sabSec: 0, sabSuccessCount: 0, sabAlertIv: null,
-      meetRound: 1, discTimer: null, discSec: 180, discRun: false, meetingActive: false, discPaused: false,
-      votingLocked: true,
-      pkMode: false, pkPlayers: [], pkRound: 0, pkContext: 'first',
-      meetingElimCount: 0, firstElimDone: false,
-      firstElimPlayer: null, // track first eliminated player
-      pigReveal: false, dodoReveal: false,
-      selSher: null, selAcc: null, selAnnE: null, selAnnR: null,
-      audioCtx: null, muted: false, bgNodes: [], bgScheduled: false,
-      bgVolume: 0.35, sfxVolume: 0.65,
-      currentBGM: 'teahouse', bgmStopped: false, isMeetingBGM: false,
-      meetingBGMNodes: [], meetingBGMRunning: false,
-      roomId: null, isHost: false, joinedRoom: null,
-      meetingOverAlert: false, meetingOverAlertIv: null,
-      currentStep: 1,
-      sabPunishKillList: [],
-    };
-
-    // ===================== FIX 5: AUTO-SAVE =====================
-    let autoSaveTimeout = null;
-    function triggerAutoSave() {
-      if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
-      const dot = d('autosave-dot');
-      if (dot) dot.classList.add('saving');
-      autoSaveTimeout = setTimeout(() => {
-        saveState();
-        if (GS.isHost && GS.roomId) broadcastState();
-        if (dot) dot.classList.remove('saving');
-        const lbl = d('autosave-label');
-        if (lbl) { lbl.textContent = '已保存 ' + gt(); setTimeout(() => { lbl.textContent = '自动保存'; }, 3000); }
-      }, 800);
+      myRoomId = localStorage.getItem('gduck_my_room_id');
+      if (!myRoomId) { 
+        myRoomId = Math.floor(100000 + Math.random() * 900000).toString(); 
+        localStorage.setItem('gduck_my_room_id', myRoomId); 
+      }
+    } catch (e) {
+      console.warn('LocalStorage is blocked or unavailable.', e);
+      myPeerId = 'guest-' + Math.random().toString(36).slice(2, 6);
+      myRoomId = '000000';
     }
-    // Periodic auto-save every 20s
-    setInterval(() => { saveState(); }, 20000);
-    // Real-time visual sync (timers, etc) directly over Socket.io
-    setInterval(() => { if (GS.isHost && GS.roomId) broadcastState(); }, 500);
 
     // ===================== SOCKET.IO NETWORK SYNC =====================
-    const socket = io();
+    const socket = (typeof io !== 'undefined') ? io() : { on: () => { }, emit: () => { } };
 
     function getRoomKey(roomId) { return 'gduck-' + roomId; }
 
@@ -3614,15 +3580,6 @@
       lg('system', '🚪', '已退出他人房间，回到本地模式');
     }
 
-    function leaveRoom() {
-      GS.joinedRoom = null;
-      GS.isHost = true;
-      d('leave-room-btn').style.display = 'none';
-      initMyRoom();
-      saveState();
-      lg('system', '🚪', '已退出他人房间，回到本地模式');
-    }
-
     function onStateChanged() {
       triggerAutoSave();
       if (GS.isHost && GS.roomId) broadcastState();
@@ -3631,6 +3588,53 @@
     // ===================== CONSTANTS =====================
     const RN = { goose: '普信鹅 🪿', detective: '法师鹅 🔍', sheriff: '护法鹅 👮', duck: '魔罗鸭 🦆', pigeon: '轮回鸽 🕊️', dodo: '痴迷鸽 🦤' };
     const GR = ['goose', 'detective', 'sheriff'];
+
+    // ===================== GAME STATE =====================
+    const DEFAULT_TEAMS = [
+      { name: '布施', count: 0 }, { name: '持戒', count: 0 }, { name: '忍辱', count: 0 },
+      { name: '精进', count: 0 }, { name: '禅定', count: 0 }, { name: '般若', count: 0 }
+    ];
+
+    const GS = {
+      teams: JSON.parse(JSON.stringify(DEFAULT_TEAMS)),
+      players: [], rolesVis: false, manualMode: false, curCard: null,
+      totalTasks: 0, taskTarget: 80,
+      sabTimer: null, sabSec: 0, sabSuccessCount: 0, sabAlertIv: null,
+      meetRound: 1, discTimer: null, discSec: 180, discRun: false, meetingActive: false, discPaused: false,
+      votingLocked: true,
+      pkMode: false, pkPlayers: [], pkRound: 0, pkContext: 'first',
+      meetingElimCount: 0, firstElimDone: false,
+      firstElimPlayer: null, // track first eliminated player
+      pigReveal: false, dodoReveal: false,
+      selSher: null, selAcc: null, selAnnE: null, selAnnR: null,
+      audioCtx: null, muted: false, bgNodes: [], bgScheduled: false,
+      bgVolume: 0.35, sfxVolume: 0.65,
+      currentBGM: 'teahouse', bgmStopped: false, isMeetingBGM: false,
+      meetingBGMNodes: [], meetingBGMRunning: false,
+      roomId: null, isHost: false, joinedRoom: null,
+      meetingOverAlert: false, meetingOverAlertIv: null,
+      currentStep: 1,
+      sabPunishKillList: [],
+    };
+
+    // ===================== FIX 5: AUTO-SAVE =====================
+    let autoSaveTimeout = null;
+    function triggerAutoSave() {
+      if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+      const dot = d('autosave-dot');
+      if (dot) dot.classList.add('saving');
+      autoSaveTimeout = setTimeout(() => {
+        saveState();
+        if (GS.isHost && GS.roomId) broadcastState();
+        if (dot) dot.classList.remove('saving');
+        const lbl = d('autosave-label');
+        if (lbl) { lbl.textContent = '已保存 ' + gt(); setTimeout(() => { lbl.textContent = '自动保存'; }, 3000); }
+      }, 800);
+    }
+    // Periodic auto-save every 20s
+    setInterval(() => { saveState(); }, 20000);
+    // Real-time visual sync (timers, etc) directly over Socket.io
+    setInterval(() => { if (GS.isHost && GS.roomId) broadcastState(); }, 500);
 
     const MUSIC_STYLES = [
       { id: 'teahouse', name: '茶馆雅座', icon: '🍵', desc: '琵琶·悠然' },

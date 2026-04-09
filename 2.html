@@ -3409,11 +3409,24 @@
 
   <script>
     // ===================== PEER ID =====================
-    let myPeerId = localStorage.getItem('gduck_peer_id');
-    if (!myPeerId) { myPeerId = Math.random().toString(36).slice(2, 10); localStorage.setItem('gduck_peer_id', myPeerId); }
+    let myPeerId, myRoomId;
+    try {
+      myPeerId = localStorage.getItem('gduck_peer_id');
+      if (!myPeerId) { 
+        myPeerId = Math.random().toString(36).slice(2, 10); 
+        localStorage.setItem('gduck_peer_id', myPeerId); 
+      }
 
-    let myRoomId = localStorage.getItem('gduck_my_room_id');
-    if (!myRoomId) { myRoomId = Math.floor(100000 + Math.random() * 900000).toString(); localStorage.setItem('gduck_my_room_id', myRoomId); }
+      myRoomId = localStorage.getItem('gduck_my_room_id');
+      if (!myRoomId) { 
+        myRoomId = Math.floor(100000 + Math.random() * 900000).toString(); 
+        localStorage.setItem('gduck_my_room_id', myRoomId); 
+      }
+    } catch (e) {
+      console.warn('LocalStorage is blocked or unavailable.', e);
+      myPeerId = 'guest-' + Math.random().toString(36).slice(2, 6);
+      myRoomId = '000000';
+    }
 
     // ===================== GAME STATE =====================
     const DEFAULT_TEAMS = [
@@ -3463,7 +3476,7 @@
     setInterval(() => { if (GS.isHost && GS.roomId) broadcastState(); }, 500);
 
     // ===================== SOCKET.IO NETWORK SYNC =====================
-    const socket = io();
+    const socket = (typeof io !== 'undefined') ? io() : { on: () => { }, emit: () => { } };
 
     function getRoomKey(roomId) { return 'gduck-' + roomId; }
 
