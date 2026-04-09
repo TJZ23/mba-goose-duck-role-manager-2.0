@@ -3410,6 +3410,12 @@
   
   <script>
     // ===================== PEER ID =====================
+    let SOCKET_SERVER_URL = ""; 
+    // 智能适配：如果用户是直接双击打开 index.html 测试，则强行连本地后端，避免卡在连接中
+    if (window.location.protocol === 'file:') { SOCKET_SERVER_URL = "http://127.0.0.1:3000"; }
+    
+    const socket = (typeof io !== 'undefined') ? io(SOCKET_SERVER_URL || undefined) : { on: () => { }, emit: () => { } };
+
     let myPeerId, myRoomId;
     try {
       myPeerId = localStorage.getItem('gduck_peer_id');
@@ -4668,9 +4674,6 @@
       hideMod('mod-join');
       directJoin(id);
     });
-    d('leave-room-btn').addEventListener('click', () => showMod('mod-leave-room'));
-    d('leave-cancel').addEventListener('click', () => hideMod('mod-leave-room'));
-    d('leave-confirm').addEventListener('click', () => { hideMod('mod-leave-room'); leaveRoom(); });
 
     // ===================== ROLE MODAL =====================
     document.querySelectorAll('.rsb').forEach(btn => btn.addEventListener('click', () => {
