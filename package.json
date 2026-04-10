@@ -1,27 +1,27 @@
 {
   "name": "goose-duck-role-manager",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "《鹅鸭杀：大厅潜行版》工委控制台 - Socket.io 实时同步版本",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node --watch server.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/TJZ23/mba-goose-duck-role-manager-2.0.git"
-  },
-  "keywords": [],
+  "keywords": [
+    "goose-duck",
+    "game-manager",
+    "realtime-sync",
+    "socket.io"
+  ],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/TJZ23/mba-goose-duck-role-manager-2.0/issues"
-  },
-  "homepage": "https://github.com/TJZ23/mba-goose-duck-role-manager-2.0#readme",
+  "license": "MIT",
   "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "socket.io": "^4.8.3"
+    "express": "^4.18.2",
+    "socket.io": "^4.5.4",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
