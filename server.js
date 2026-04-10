@@ -1,191 +1,182 @@
-import express from 'express';
-import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
-const httpServer = createServer(app);
-const io = new SocketIOServer(httpServer, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// ─────────────────────────────────────────────
+// 持久化存储（JSON 文件，模拟云端）
+// ─────────────────────────────────────────────
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
+
+function roomFile(roomId) {
+  return path.join(DATA_DIR, `room_${roomId}.json`);
+}
+
+function loadRoom(roomId) {
+  try {
+    const f = roomFile(roomId);
+    if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, 'utf8'));
+  } catch (e) {}
+  return null;
+}
+
+function saveRoom(roomId, state) {
+  try {
+    fs.writeFileSync(roomFile(roomId), JSON.stringify(state), 'utf8');
+  } catch (e) {
+    console.error('saveRoom error:', e.message);
   }
-});
+}
 
-// 中间件
-app.use(cors());
+// ─────────────────────────────────────────────
+// 内存缓存
+// roomStates : Map<roomId, gameState>
+// roomMembers: Map<roomId, Set<socketId>>
+// socketRoom : Map<socketId, roomId>
+// ─────────────────────────────────────────────
+const roomStates  = new Map();
+const roomMembers = new Map();
+const socketRoom  = new Map();
+
+function getState(roomId) {
+  if (!roomStates.has(roomId)) {
+    const saved = loadRoom(roomId);
+    roomStates.set(roomId, saved || { roomId, createdAt: Date.now(), gameState: null });
+  }
+  return roomStates.get(roomId);
+}
+
+function setState(roomId, state) {
+  roomStates.set(roomId, state);
+  saveRoom(roomId, state);  // 立刻持久化
+}
+
+function occupancy(roomId) {
+  return (roomMembers.get(roomId) || new Set()).size;
+}
+
+// 定期将所有内存状态写盘（防止意外丢失）
+setInterval(() => {
+  for (const [roomId, state] of roomStates) {
+    saveRoom(roomId, state);
+  }
+}, 30_000);
+
+// ─────────────────────────────────────────────
+// 静态文件
+// ─────────────────────────────────────────────
 app.use(express.static(__dirname));
-app.use(express.json());
 
-// 房间数据存储 (内存存储)
-const rooms = new Map();
+// API: 检查房间是否存在
+app.get('/api/room/:roomId', (req, res) => {
+  const { roomId } = req.params;
+  const state = loadRoom(roomId);
+  res.json({ exists: !!state, roomId });
+});
 
-// Socket.io 事件处理
+// ─────────────────────────────────────────────
+// Socket.io 逻辑
+// ─────────────────────────────────────────────
 io.on('connection', (socket) => {
-  console.log(`[连接] ${socket.id} 已连接`);
+  console.log(`[+] ${socket.id} 已连接`);
 
-  // 用户加入房间
-  socket.on('join-room', (data) => {
-    const { roomId, userId } = data;
-    
+  // ── 加入房间 ──────────────────────────────
+  socket.on('join-room', ({ roomId, peerId }) => {
+    // 离开旧房间
+    const oldRoom = socketRoom.get(socket.id);
+    if (oldRoom) {
+      socket.leave(oldRoom);
+      const members = roomMembers.get(oldRoom);
+      if (members) { members.delete(socket.id); if (!members.size) roomMembers.delete(oldRoom); }
+      io.to(oldRoom).emit('occupancy-update', occupancy(oldRoom));
+    }
+
+    // 加入新房间
     socket.join(roomId);
-    
-    // 获取或创建房间
-    if (!rooms.has(roomId)) {
-      rooms.set(roomId, {
-        id: roomId,
-        users: new Map(),
-        gameState: null,
-        createdAt: Date.now()
-      });
-    }
+    socketRoom.set(socket.id, roomId);
+    if (!roomMembers.has(roomId)) roomMembers.set(roomId, new Set());
+    roomMembers.get(roomId).add(socket.id);
 
-    const room = rooms.get(roomId);
-    room.users.set(socket.id, {
-      socketId: socket.id,
-      userId: userId,
-      joinedAt: Date.now()
+    console.log(`[→] ${socket.id} (peer:${peerId}) 加入房间 ${roomId}`);
+
+    // 将已有状态推送给刚加入者
+    const existing = getState(roomId);
+    socket.emit('room-joined', {
+      roomId,
+      state: existing.gameState || null,
+      online: occupancy(roomId)
     });
 
-    console.log(`[房间] 用户 ${userId} (${socket.id}) 加入房间 ${roomId}`);
+    // 通知房间内其他人在线数变化
+    socket.to(roomId).emit('occupancy-update', occupancy(roomId));
 
-    // 告诉加入者房间的当前状态
-    if (room.gameState) {
-      socket.emit('sync-state', {
-        state: room.gameState,
-        roomUsers: Array.from(room.users.values())
-      });
+    // 告知房间内所有人（含自身）最新在线数
+    io.to(roomId).emit('occupancy-update', occupancy(roomId));
+  });
+
+  // ── 接收完整游戏状态（增量或全量）────────
+  socket.on('push-state', ({ roomId, gameState, partial }) => {
+    if (!roomId) return;
+    const current = getState(roomId);
+
+    let merged;
+    if (partial && current.gameState) {
+      // 浅合并：只更新变动字段
+      merged = { ...current.gameState, ...gameState };
     } else {
-      socket.emit('room-joined', {
-        roomId: roomId,
-        users: Array.from(room.users.values())
-      });
+      merged = gameState;
     }
 
-    // 广播用户加入事件
-    io.to(roomId).emit('user-joined', {
-      userId: userId,
-      socketId: socket.id,
-      roomUsers: Array.from(room.users.values())
-    });
+    const next = { ...current, gameState: merged, updatedAt: Date.now() };
+    setState(roomId, next);
+
+    // 广播给房间内 除自己以外 的所有人
+    socket.to(roomId).emit('state-update', { gameState: merged, partial: !!partial });
   });
 
-  // 同步游戏状态
-  socket.on('update-state', (data) => {
-    const { roomId, state } = data;
-    
-    if (!rooms.has(roomId)) {
-      console.warn(`[警告] 房间 ${roomId} 不存在`);
-      return;
-    }
-
-    const room = rooms.get(roomId);
-    room.gameState = state;
-
-    // 广播状态更新
-    io.to(roomId).emit('state-updated', {
-      state: state,
-      timestamp: Date.now()
-    });
-
-    console.log(`[同步] 房间 ${roomId} 状态已更新 (来自: ${socket.id})`);
+  // ── 细粒度操作同步（点击、输入等）────────
+  // 这保证了"操作意识独立，结果同步"的体验
+  socket.on('sync-action', ({ roomId, action }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit('peer-action', action);
   });
 
-  // 广播用户操作
-  socket.on('user-action', (data) => {
-    const { roomId, action, payload } = data;
-    
-    if (!rooms.has(roomId)) {
-      console.warn(`[警告] 房间 ${roomId} 不存在`);
-      return;
-    }
-
-    // 广播事件给房间内所有人
-    io.to(roomId).emit('user-action', {
-      from: socket.id,
-      action: action,
-      payload: payload,
-      timestamp: Date.now()
-    });
-
-    console.log(`[操作] 房间 ${roomId}: ${action}`);
+  // ── 请求最新完整状态（重连时）────────────
+  socket.on('request-state', ({ roomId }) => {
+    const existing = getState(roomId);
+    socket.emit('state-update', { gameState: existing.gameState || null, partial: false });
   });
 
-  // 离开房间
-  socket.on('leave-room', (data) => {
-    const { roomId, userId } = data;
-
-    socket.leave(roomId);
-
-    if (rooms.has(roomId)) {
-      const room = rooms.get(roomId);
-      room.users.delete(socket.id);
-
-      // 如果房间为空，删除房间
-      if (room.users.size === 0) {
-        rooms.delete(roomId);
-        console.log(`[房间] 房间 ${roomId} 已删除（空房间）`);
-      } else {
-        // 通知房间内其他人
-        io.to(roomId).emit('user-left', {
-          userId: userId,
-          socketId: socket.id,
-          roomUsers: Array.from(room.users.values())
-        });
-      }
-    }
-
-    console.log(`[房间] 用户 ${userId} (${socket.id}) 离开房间 ${roomId}`);
-  });
-
-  // 断开连接
+  // ── 断开 ──────────────────────────────────
   socket.on('disconnect', () => {
-    console.log(`[断开] ${socket.id} 已断开连接`);
-
-    // 清理所有房间中的用户
-    for (const [roomId, room] of rooms.entries()) {
-      if (room.users.has(socket.id)) {
-        const userId = room.users.get(socket.id).userId;
-        room.users.delete(socket.id);
-
-        if (room.users.size === 0) {
-          rooms.delete(roomId);
-          console.log(`[房间] 房间 ${roomId} 已删除（空房间）`);
-        } else {
-          io.to(roomId).emit('user-left', {
-            userId: userId,
-            socketId: socket.id,
-            roomUsers: Array.from(room.users.values())
-          });
-        }
-      }
+    const roomId = socketRoom.get(socket.id);
+    if (roomId) {
+      const members = roomMembers.get(roomId);
+      if (members) { members.delete(socket.id); if (!members.size) roomMembers.delete(roomId); }
+      io.to(roomId).emit('occupancy-update', occupancy(roomId));
+      socketRoom.delete(socket.id);
     }
-  });
-
-  // 心跳保活
-  socket.on('ping', () => {
-    socket.emit('pong');
+    console.log(`[-] ${socket.id} 已断开`);
   });
 });
 
-// 路由：获取服务器状态
-app.get('/api/status', (req, res) => {
-  res.json({
-    status: 'ok',
-    rooms: rooms.size,
-    totalUsers: Array.from(rooms.values()).reduce((sum, r) => sum + r.users.size, 0)
-  });
-});
-
-// 启动服务器
 const PORT = process.env.PORT || 3000;
-httpServer.listen(PORT, () => {
-  console.log(`[服务器] 《鹅鸭杀控制台》服务器运行在 http://localhost:${PORT}`);
-  console.log(`[Socket.io] 已启用实时同步`);
-  console.log(`[房间] 支持无限房间数量`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`
+  ╔══════════════════════════════════════════════╗
+  ║   🪿 鹅鸭杀 · 跨网络实时同步版 已启动！       ║
+  ║   本地:  http://localhost:${PORT}               ║
+  ║   局域网: http://<本机IP>:${PORT}               ║
+  ╚══════════════════════════════════════════════╝
+  `);
 });
