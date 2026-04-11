@@ -339,8 +339,8 @@
     .join-input-big:focus{outline:none;border-color:var(--pc)}
     .rh-title{font-size:.85rem;color:var(--ts);margin-top:14px;margin-bottom:6px}
     .history-list{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;max-height:100px;overflow-y:auto}
-    .rh-btn{background:rgba(196,150,58,.08);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:.85rem;color:var(--tp);cursor:pointer;transition:all .2s;font-family:monospace;letter-spacing:1px}
-    .rh-btn:hover{background:var(--pc);color:#fff;border-color:var(--pd);transform:scale(1.05)}
+    .rh-btn{background:rgba(196,150,58,.08);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:.85rem;color:var(--tp);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s;font-family:monospace;letter-spacing:1px;box-shadow:0 0 0 2px transparent}
+    .rh-btn:hover{background:var(--pc);color:#fff;border-color:var(--pd);box-shadow:0 0 8px rgba(196,150,58,.4)}
     .rh-empty{font-size:.8rem;color:#aaa;font-style:italic}
 
     /* ── PK ALERT ─────────────────────────────── */
@@ -400,6 +400,16 @@
     <div class="sba">
       <button class="btn bsc sm" id="sab-ok">✅ 任务完成</button>
       <button class="btn bd sm" id="sab-fail">💀 时间到！执行惩罚</button>
+    </div>
+  </div>
+
+  <!-- MEETING BANNER -->
+  <div class="sb" id="meeting-banner" style="display:none;background:linear-gradient(135deg,#1A5E8A,#0A3A5A)">
+    <div class="sbt">
+      <div><h3>🔔 开始会议</h3><p id="meeting-banner-desc">第 1 轮讨论进行中…</p></div>
+      <div class="stimer" id="meeting-banner-timer">3:00</div>
+    </div>
+    <div class="sba" style="display:none">
     </div>
   </div>
 
@@ -638,7 +648,7 @@
     </div>
     <input class="join-input-big" type="text" id="join-room-input" maxlength="6" placeholder="000000">
     <div class="rh-title">🕒 最近同步的房间：</div>
-    <div class="history-list" id="join-history-list"><div class="rh-empty">暂无历史记录</div></div>
+    <div class="history-list" id="join-history-list" style="align-items:center"><div class="rh-empty">暂无历史记录</div></div>
     <div class="mact" style="margin-top:14px">
       <button class="btn bo" id="join-cancel">取消</button>
       <button class="btn bp" id="join-confirm">🚀 加入并同步</button>
@@ -712,6 +722,25 @@ socket.on('room-joined', ({ roomId, state, online }) => {
   d('room-id-display').textContent = roomId;
   d('online-count').textContent = online;
   setSyncStatus('online', isInMyRoom ? '我的房间' : `已同步 · ${roomId}`);
+  
+  // 如果服务器没有状态且是自己的房间，尝试恢复本地保存的游戏
+  if (!state && isInMyRoom) {
+    const savedGame = loadGameFromLocalStorage(roomId);
+    if (savedGame) {
+      showC1('🎮 检测到之前保存的游戏内容。\n\n是否恢复上次的游戏状态？', (shouldRestore) => {
+        if (shouldRestore) {
+          applyRemoteGameState(savedGame);
+          onStateChanged();
+          lg('system','🔄','游戏已恢复');
+        } else {
+          clearSavedGame(roomId);
+          lg('system','🗑️','已清除保存的游戏');
+        }
+      });
+      return;
+    }
+  }
+  
   if (state) applyRemoteGameState(state);
 });
 
@@ -720,6 +749,118 @@ socket.on('state-update', ({ gameState, partial }) => {
   if (!gameState) return;
   applyRemoteGameState(gameState);
   showSaveBadge('云端同步');
+});
+
+// 处理其他玩家的action（包括音乐同步、临时任务、会议同步）
+socket.on('peer-action', (action) => {
+  if (!action) return;
+  if (action.type === 'bgm-change') {
+    GS.currentBGM = action.currentBGM;
+    GS.bgmStopped = action.bgmStopped;
+    buildMusicGrid();
+    d('bgm-stop-btn').textContent = action.bgmStopped ? '▶ 开启音乐' : '⏹ 关闭音乐';
+    if (!GS.muted && !GS.bgmStopped) {
+      if (GS.meetingActive && GS.meetingBGMRunning) {
+        stopBG();
+        startMeetingBGM();
+      } else {
+        stopBG();
+        GS.isMeetingBGM = false;
+        startBG();
+      }
+    }
+  } else if (action.type === 'bgm-toggle') {
+    GS.bgmStopped = action.bgmStopped;
+    d('bgm-stop-btn').textContent = action.bgmStopped ? '▶ 开启音乐' : '⏹ 关闭音乐';
+    if (action.bgmStopped) {
+      stopBG();
+    } else if (!GS.muted) {
+      if (GS.meetingActive && GS.meetingBGMRunning) {
+        startMeetingBGM();
+      } else {
+        startBG();
+      }
+    }
+  } else if (action.type === 'bgm-volume') {
+    GS.bgVolume = action.volume;
+    d('bgm-vol').value = Math.round(action.volume * 100);
+    d('bgm-vol-label').textContent = Math.round(action.volume * 100) + '%';
+  } else if (action.type === 'mute-toggle') {
+    GS.muted = action.muted;
+    d('music-btn').textContent = action.muted ? '🔇' : '🎵';
+    if (!action.muted && !GS.bgmStopped) {
+      if (GS.meetingActive && GS.meetingBGMRunning) {
+        startMeetingBGM();
+      } else {
+        startBG();
+      }
+    } else if (action.muted) {
+      stopBG();
+    }
+  } else if (action.type === 'sabotage-start') {
+    GS.sabSec = action.sabSec;
+    d('sab-desc-disp').textContent = action.sabDesc;
+    d('sab-banner').classList.add('active');
+    updSabT();
+    if (!GS.sabTimer) {
+      stopBG();
+      startSabAlert();
+      GS.sabTimer = setInterval(() => {
+        GS.sabSec--;
+        updSabT();
+        if (GS.sabSec <= 0) {
+          clearInterval(GS.sabTimer);
+          GS.sabTimer = null;
+          stopSabAlert();
+          d('sab-banner').classList.remove('active');
+        }
+      }, 1000);
+    }
+  } else if (action.type === 'sabotage-complete') {
+    if (GS.sabTimer) {
+      clearInterval(GS.sabTimer);
+      GS.sabTimer = null;
+    }
+    stopSabAlert();
+    d('sab-banner').classList.remove('active');
+    GS.sabSuccessCount = action.sabSuccessCount;
+    updStats();
+  } else if (action.type === 'sabotage-fail') {
+    if (GS.sabTimer) {
+      clearInterval(GS.sabTimer);
+      GS.sabTimer = null;
+    }
+    stopSabAlert();
+    d('sab-banner').classList.remove('active');
+  } else if (action.type === 'meeting-start') {
+    GS.meetingActive = true;
+    GS.meetRound = action.meetRound;
+    GS.discSec = action.discSec;
+    d('meeting-banner').style.display = 'block';
+    d('meeting-banner-desc').textContent = `第 ${action.meetRound} 轮讨论进行中…`;
+    renderDisc();
+    if (!GS.discTimer) {
+      GS.discRun = true;
+      GS.discTimer = setInterval(() => {
+        GS.discSec--;
+        renderDisc();
+        if (GS.discSec <= 0) {
+          stopDisc();
+        }
+      }, 1000);
+    }
+    setVotingLocked(false);
+    refCands();
+    updJailBoard();
+  } else if (action.type === 'meeting-end') {
+    GS.meetingActive = false;
+    if (GS.discTimer) {
+      clearInterval(GS.discTimer);
+      GS.discTimer = null;
+    }
+    d('meeting-banner').style.display = 'none';
+    setVotingLocked(true);
+  }
 });
 
 // 在线人数变化
@@ -743,10 +884,73 @@ function pushState(partial = false) {
 function onStateChanged() { pushState(false); }
 
 // ═══════════════════════════════════════════════════════════
-// ROOM MANAGEMENT
+// ROOM MANAGEMENT + GAME SAVE/RESTORE
 // ═══════════════════════════════════════════════════════════
+function saveGameToLocalStorage(roomId) {
+  try {
+    const gs = exportGameState();
+    const saveData = {
+      timestamp: Date.now(),
+      roomId: roomId,
+      state: gs
+    };
+    localStorage.setItem(`gduck_saved_game_${roomId}`, JSON.stringify(saveData));
+    lg('system','💾',`游戏已保存到本地（房间 ${roomId}）`);
+  } catch(e) {
+    console.error('保存游戏失败:', e);
+  }
+}
+
+function loadGameFromLocalStorage(roomId) {
+  try {
+    const saveData = JSON.parse(localStorage.getItem(`gduck_saved_game_${roomId}`));
+    if (!saveData || !saveData.state) return null;
+    return saveData.state;
+  } catch(e) {
+    return null;
+  }
+}
+
+function hasSavedGame(roomId) {
+  try {
+    const saveData = localStorage.getItem(`gduck_saved_game_${roomId}`);
+    return saveData !== null;
+  } catch(e) {
+    return false;
+  }
+}
+
+function clearSavedGame(roomId) {
+  try {
+    localStorage.removeItem(`gduck_saved_game_${roomId}`);
+  } catch(e) {}
+}
+
+function hasGameContent() {
+  return GS.players.length > 0 || GS.totalTasks > 0 || GS.teams.some(t => t.count > 0);
+}
+
 function joinRoom(targetRoomId) {
   if (targetRoomId === currentRoomId) return;
+  
+  // 如果要加入别人的房间且当前房间有游戏内容，提示是否保存
+  const isJoiningOtherRoom = (targetRoomId !== myRoomId);
+  if (isJoiningOtherRoom && hasGameContent()) {
+    showC1('⚠️ 您有未完成的游戏内容。\n\n【确定】保存当前游戏（下次回到此房间可恢复）\n【取消】放弃保存，直接加入对方房间\n\n选择后，您将看到对方房间的游戏内容。', (shouldSave) => {
+      if (shouldSave) {
+        saveGameToLocalStorage(currentRoomId);
+        lg('system','💾',`游戏已保存（房间 ${currentRoomId}）`);
+      } else {
+        lg('system','🗑️',`已放弃保存，游戏内容将清空`);
+      }
+      proceedToJoinRoom(targetRoomId);
+    });
+  } else {
+    proceedToJoinRoom(targetRoomId);
+  }
+}
+
+function proceedToJoinRoom(targetRoomId) {
   currentRoomId = targetRoomId;
   isInMyRoom = (targetRoomId === myRoomId);
   d('room-id-display').textContent = targetRoomId;
@@ -758,6 +962,11 @@ function joinRoom(targetRoomId) {
 }
 
 function leaveRoom() {
+  // 保存当前房间的游戏状态
+  if (hasGameContent()) {
+    saveGameToLocalStorage(currentRoomId);
+  }
+  
   currentRoomId = myRoomId;
   isInMyRoom = true;
   d('leave-room-btn').style.display = 'none';
@@ -791,10 +1000,31 @@ function renderRoomHistory() {
     let h = JSON.parse(localStorage.getItem('gduck_room_history')||'[]');
     c.innerHTML = h.length ? '' : '<div class="rh-empty">暂无历史记录</div>';
     h.forEach(id => {
-      const btn = document.createElement('button'); btn.className='rh-btn';
+      const container = document.createElement('div');
+      container.style.display = 'flex';
+      container.style.alignItems = 'center';
+      container.style.gap = '4px';
+      const btn = document.createElement('button'); 
+      btn.className='rh-btn';
       btn.textContent = '🏠 '+id;
+      btn.style.flex = '1';
       btn.onclick = () => { d('join-room-input').value=id; };
-      c.appendChild(btn);
+      const delBtn = document.createElement('button');
+      delBtn.className = 'rh-btn';
+      delBtn.textContent = '✕';
+      delBtn.style.flex = '0';
+      delBtn.style.minWidth = '28px';
+      delBtn.style.padding = '6px';
+      delBtn.style.color = '#A03030';
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        h = h.filter(x => x !== id);
+        localStorage.setItem('gduck_room_history', JSON.stringify(h));
+        renderRoomHistory();
+      };
+      container.appendChild(btn);
+      container.appendChild(delBtn);
+      c.appendChild(container);
     });
   } catch(e) {}
 }
@@ -902,6 +1132,10 @@ function applyRemoteGameState(gs) {
       if (gs.sabTimerActive) { d('sab-banner').classList.add('active'); d('sab-desc-disp').textContent=gs.sabDesc||''; d('sab-timer').textContent = fmtTime(gs.sabSec||0); }
       else d('sab-banner').classList.remove('active');
     }
+    if (gs.meetingActive !== undefined) {
+      if (gs.meetingActive) { d('meeting-banner').style.display = 'block'; d('meeting-banner-desc').textContent = `第 ${gs.meetRound} 轮讨论进行中…`; d('meeting-banner-timer').textContent = fmtTime(gs.discSec || 0); }
+      else d('meeting-banner').style.display = 'none';
+    }
     if (gs.pigReveal !== undefined) { GS.pigReveal=gs.pigReveal; d('sl-pig').textContent=gs.pigReveal?'轮回鸽 🕊️':'秘密 🔒'; }
     if (gs.dodoReveal !== undefined) { GS.dodoReveal=gs.dodoReveal; d('sl-dodo').textContent=gs.dodoReveal?'痴迷鸽 🦤':'秘密 🔒'; }
     if (gs.rolesVis !== undefined) { if (gs.rolesVis !== GS.rolesVis) { gs.rolesVis ? showAllRoles() : hideAllRoles(); } }
@@ -983,10 +1217,10 @@ function pauseMeetingBGM(){stopBG()}
 function resumeMeetingBGM(){if(!GS.muted&&!GS.bgmStopped)startMeetingBGM()}
 
 const MUSIC_STYLES=[{id:'teahouse',name:'茶馆雅座',icon:'🍵',desc:'琵琶·悠然'},{id:'waterfall',name:'飞瀑清泉',icon:'🌊',desc:'水声·空灵'},{id:'nightmarket',name:'夜市喧嚣',icon:'🏮',desc:'热闹·活力'},{id:'temple',name:'古刹晨钟',icon:'🔔',desc:'梵音·禅意'},{id:'bamboo',name:'竹林深处',icon:'🎋',desc:'竹笛·清风'},{id:'moonlit',name:'月下小酌',icon:'🌙',desc:'古琴·悠远'},{id:'peach',name:'桃花源记',icon:'🌸',desc:'筝·梦幻'},{id:'storm',name:'惊雷骤雨',icon:'⛈️',desc:'雨声·激昂'},{id:'silk',name:'丝绸之路',icon:'🐫',desc:'旅途·悠长'},{id:'harvest',name:'丰收节庆',icon:'🌾',desc:'锣鼓·欢腾'},{id:'ink',name:'水墨丹青',icon:'🖌️',desc:'留白·墨香'},{id:'dragon',name:'龙舟竞渡',icon:'🐉',desc:'鼓点·澎湃'},{id:'snow',name:'雪夜静思',icon:'❄️',desc:'箫声·沉思'},{id:'spring',name:'春日晨曦',icon:'🌅',desc:'鸟鸣·温暖'},{id:'warrior',name:'将军战歌',icon:'⚔️',desc:'铿锵·豪迈'}];
-function buildMusicGrid(){const grid=d('music-grid');grid.innerHTML='';MUSIC_STYLES.forEach(s=>{const btn=document.createElement('button');btn.className='mbtn'+(GS.currentBGM===s.id?' active':'');btn.dataset.id=s.id;btn.innerHTML=`<span class="mico">${s.icon}</span><strong>${s.name}</strong><br><small style="color:#999;font-weight:400">${s.desc}</small>`;btn.addEventListener('click',()=>{GS.currentBGM=s.id;GS.bgmStopped=false;document.querySelectorAll('.mbtn').forEach(b=>b.classList.toggle('active',b.dataset.id===s.id));d('bgm-stop-btn').textContent='⏹ 关闭音乐';if(!GS.muted){if(GS.meetingActive&&GS.meetingBGMRunning){stopBG();startMeetingBGM()}else{stopBG();GS.isMeetingBGM=false;startBG()}}lg('system','🎵',`切换音乐：${s.name}`)});grid.appendChild(btn)})}
-d('bgm-stop-btn').addEventListener('click',()=>{if(GS.bgScheduled){stopBG();GS.bgmStopped=true;d('bgm-stop-btn').textContent='▶ 开启音乐'}else{GS.bgmStopped=false;if(GS.meetingActive){startMeetingBGM()}else{startBG()};d('bgm-stop-btn').textContent='⏹ 关闭音乐'}});
-d('bgm-vol').addEventListener('input',function(){GS.bgVolume=parseInt(this.value)/100;d('bgm-vol-label').textContent=this.value+'%'});
-d('music-btn').addEventListener('click',()=>{GS.muted=!GS.muted;d('music-btn').textContent=GS.muted?'🔇':'🎵';if(!GS.muted&&!GS.bgmStopped){if(GS.meetingActive){startMeetingBGM()}else startBG()}else if(GS.muted)stopBG()});
+function buildMusicGrid(){const grid=d('music-grid');grid.innerHTML='';MUSIC_STYLES.forEach(s=>{const btn=document.createElement('button');btn.className='mbtn'+(GS.currentBGM===s.id?' active':'');btn.dataset.id=s.id;btn.innerHTML=`<span class="mico">${s.icon}</span><strong>${s.name}</strong><br><small style="color:#999;font-weight:400">${s.desc}</small>`;btn.addEventListener('click',()=>{GS.currentBGM=s.id;GS.bgmStopped=false;document.querySelectorAll('.mbtn').forEach(b=>b.classList.toggle('active',b.dataset.id===s.id));d('bgm-stop-btn').textContent='⏹ 关闭音乐';if(!GS.muted){if(GS.meetingActive&&GS.meetingBGMRunning){stopBG();startMeetingBGM()}else{stopBG();GS.isMeetingBGM=false;startBG()}}lg('system','🎵',`切换音乐：${s.name}`);socket.emit('sync-action',{roomId:currentRoomId,action:{type:'bgm-change',currentBGM:s.id,bgmStopped:false}})});grid.appendChild(btn)})}
+d('bgm-stop-btn').addEventListener('click',()=>{if(GS.bgScheduled){stopBG();GS.bgmStopped=true;d('bgm-stop-btn').textContent='▶ 开启音乐'}else{GS.bgmStopped=false;if(GS.meetingActive){startMeetingBGM()}else{startBG()};d('bgm-stop-btn').textContent='⏹ 关闭音乐'}socket.emit('sync-action',{roomId:currentRoomId,action:{type:'bgm-toggle',bgmStopped:GS.bgmStopped}})});
+d('bgm-vol').addEventListener('input',function(){GS.bgVolume=parseInt(this.value)/100;d('bgm-vol-label').textContent=this.value+'%';socket.emit('sync-action',{roomId:currentRoomId,action:{type:'bgm-volume',volume:GS.bgVolume}})});
+d('music-btn').addEventListener('click',()=>{GS.muted=!GS.muted;d('music-btn').textContent=GS.muted?'🔇':'🎵';if(!GS.muted&&!GS.bgmStopped){if(GS.meetingActive){startMeetingBGM()}else startBG()}else if(GS.muted)stopBG();socket.emit('sync-action',{roomId:currentRoomId,action:{type:'mute-toggle',muted:GS.muted}})});
 
 // ═══════════════════════════════════════════════════════════
 // LOGGING
@@ -1051,15 +1285,15 @@ function rkill(n,reason){const killable=GS.players.filter(p=>!p.element.classLis
 // ═══════════════════════════════════════════════════════════
 // SABOTAGE
 // ═══════════════════════════════════════════════════════════
-d('trig-sab').addEventListener('click',()=>{if(GS.sabTimer){alert('已有临时任务进行中！');return}const desc=d('sab-desc').value||'魔罗鸭发动破坏！';const dur=+d('sab-dur').value||120;GS.sabSec=dur;d('sab-desc-disp').textContent=desc;d('sab-banner').classList.add('active');updSabT();stopBG();startSabAlert();GS.sabTimer=setInterval(()=>{GS.sabSec--;updSabT();onStateChanged();if(GS.sabSec<=0){clearInterval(GS.sabTimer);GS.sabTimer=null;stopSabAlert();autoSabFail()}},1000);lg('sabotage','🚨',`临时任务：「${desc}」限时${dur}秒`);activateTab('dash');onStateChanged()});
+d('trig-sab').addEventListener('click',()=>{if(GS.sabTimer){alert('已有临时任务进行中！');return}const desc=d('sab-desc').value||'魔罗鸭发动破坏！';const dur=+d('sab-dur').value||120;GS.sabSec=dur;d('sab-desc-disp').textContent=desc;d('sab-banner').classList.add('active');updSabT();stopBG();startSabAlert();GS.sabTimer=setInterval(()=>{GS.sabSec--;updSabT();onStateChanged();if(GS.sabSec<=0){clearInterval(GS.sabTimer);GS.sabTimer=null;stopSabAlert();autoSabFail()}},1000);lg('sabotage','🚨',`临时任务：「${desc}」限时${dur}秒`);activateTab('dash');socket.emit('sync-action',{roomId:currentRoomId,action:{type:'sabotage-start',sabSec:dur,sabDesc:desc}});onStateChanged()});
 function showSabResult(success){d('sab-result-icon').textContent=success?'✅':'💀';d('sab-result-title').textContent=success?'临时任务完成！':'临时任务失败！';d('sab-result-msg').textContent=success?'所有修行者齐心协力，成功守护了道场！':'时间已到，任务宣告失败。请选择要执行的惩罚（选其一）或取消惩罚：';const ps=d('sab-punish-section'),cb=d('sab-punish-cancel-btn');ps.style.display=success?'none':'block';cb.style.display=success?'none':'inline-flex';if(!success){const pct=parseInt(d('sd-pct').value)||10;const nKill=parseInt(d('sk-n').value)||2;d('sab-punish-pct-label').textContent=pct;d('sab-punish-n-label').textContent=nKill;const before=GS.totalTasks;const willDeduct=Math.floor(before*pct/100);d('sab-deduct-preview').textContent=`当前任务 ${before} 个 → 扣除 ${willDeduct} 个 → 剩余 ${Math.max(0,before-willDeduct)} 个`;const killable=GS.players.filter(p=>!p.element.classList.contains('eliminated')&&GR.includes(p.element.dataset.role));const preKill=[...killable].sort(()=>Math.random()-.5).slice(0,Math.min(nKill,killable.length));GS.sabPunishKillList=preKill;d('sab-kill-preview').textContent=preKill.length>0?`将暴毙：${preKill.map(p=>p.name).join('、')}（共 ${preKill.length} 名）`:'当前没有可暴毙的存活鹅';document.querySelectorAll('input[name="sab-punish-radio"]').forEach(r=>r.checked=false);document.querySelectorAll('.sab-punish-opt').forEach(o=>o.classList.remove('selected'));document.querySelectorAll('input[name="sab-punish-radio"]').forEach(r=>{r.onchange=()=>{document.querySelectorAll('.sab-punish-opt').forEach(o=>o.classList.remove('selected'));if(r.checked)r.closest('.sab-punish-opt').classList.add('selected')}})}
 cb.onclick=()=>{hideMod('mod-sab-result');lg('sabotage','💀','临时任务失败！选择不执行额外惩罚。');if(!GS.muted&&!GS.bgmStopped)startBG()};
 d('sab-result-ok').onclick=()=>{if(success){hideMod('mod-sab-result');if(!GS.muted&&!GS.bgmStopped)startBG();return}const sel=document.querySelector('input[name="sab-punish-radio"]:checked');if(!sel){alert('请选择一项惩罚，或点击「取消惩罚」！');return}const pct=parseInt(d('sd-pct').value)||10;const before=GS.totalTasks;const willDeduct=Math.floor(before*pct/100);let previewHTML='';if(sel.value==='deduct'){previewHTML=`<div style="padding:8px 0"><strong style="color:var(--erc)">⬇️ 扣除任务进度 ${pct}%</strong><br>当前任务：${before} 个<br>扣除：<strong style="color:var(--erc)">${willDeduct}</strong> 个<br>剩余：<strong>${Math.max(0,before-willDeduct)}</strong> 个</div>`}else{const names=GS.sabPunishKillList.map(p=>p.name).join('、');previewHTML=`<div style="padding:8px 0"><strong style="color:var(--erc)">☠️ 随机暴毙</strong><br>将往生：<strong style="color:var(--erc)">${names||'（无可暴毙对象）'}</strong><br>共 ${GS.sabPunishKillList.length} 名鹅</div>`}
 d('sab-punish-preview').innerHTML=previewHTML;d('sab-punish-go').onclick=()=>{hideMod('mod-sab-punish-confirm');hideMod('mod-sab-result');if(sel.value==='deduct'){dedPct(pct)}else{if(GS.sabPunishKillList.length){GS.sabPunishKillList.forEach(p=>elimP(p.element));updStats();refCands();refPickers();lg('sabotage','☠️',`临时任务失败暴毙！${GS.sabPunishKillList.map(p=>p.name).join('、')}倒下！`);onStateChanged()}else{lg('system','⚠️','没有可暴毙的存活鹅')}}GS.sabPunishKillList=[];if(!GS.muted&&!GS.bgmStopped)startBG()};d('sab-punish-back').onclick=()=>{hideMod('mod-sab-punish-confirm');setTimeout(()=>showMod('mod-sab-result'),200)};hideMod('mod-sab-result');setTimeout(()=>showMod('mod-sab-punish-confirm'),200)};showMod('mod-sab-result')}
-function autoSabFail(){d('sab-banner').classList.remove('active');sfxFail();showSabResult(false);lg('sabotage','💀','临时任务倒计时结束，宣告失败！')}
+function autoSabFail(){d('sab-banner').classList.remove('active');sfxFail();showSabResult(false);lg('sabotage','💀','临时任务倒计时结束，宣告失败！');socket.emit('sync-action',{roomId:currentRoomId,action:{type:'sabotage-fail'}})}
 function updSabT(){d('sab-timer').textContent=fmtTime(GS.sabSec)}
-d('sab-ok').addEventListener('click',()=>{clearInterval(GS.sabTimer);GS.sabTimer=null;stopSabAlert();d('sab-banner').classList.remove('active');if(!GS.muted&&!GS.bgmStopped)setTimeout(()=>startBG(),400);GS.sabSuccessCount++;updStats();lg('system','✅','临时任务完成！');showSabResult(true);onStateChanged()});
-d('sab-fail').addEventListener('click',()=>{clearInterval(GS.sabTimer);GS.sabTimer=null;stopSabAlert();d('sab-banner').classList.remove('active');autoSabFail()});
+d('sab-ok').addEventListener('click',()=>{clearInterval(GS.sabTimer);GS.sabTimer=null;stopSabAlert();d('sab-banner').classList.remove('active');if(!GS.muted&&!GS.bgmStopped)setTimeout(()=>startBG(),400);GS.sabSuccessCount++;updStats();lg('system','✅','临时任务完成！');showSabResult(true);socket.emit('sync-action',{roomId:currentRoomId,action:{type:'sabotage-complete',sabSuccessCount:GS.sabSuccessCount}});onStateChanged()});
+d('sab-fail').addEventListener('click',()=>{clearInterval(GS.sabTimer);GS.sabTimer=null;stopSabAlert();d('sab-banner').classList.remove('active');autoSabFail();socket.emit('sync-action',{roomId:currentRoomId,action:{type:'sabotage-fail'}})});
 d('sd-btn').addEventListener('click',()=>{const pct=parseInt(d('sd-pct').value)||10;const before=GS.totalTasks;const willDeduct=Math.floor(before*pct/100);showC1(`扣除 ${pct}% 任务进度（-${willDeduct}个，剩${Math.max(0,before-willDeduct)}个），确认？`,ok=>{if(ok)dedPct(pct)})});
 d('sk-btn').addEventListener('click',()=>{const n=parseInt(d('sk-n').value)||2;showC1(`随机暴毙 ${n} 名鹅，确认？`,ok=>{if(ok)rkill(n,'破坏惩罚暴毙')})});
 
@@ -1073,25 +1307,25 @@ function updAllCandBars(){const alive=GS.players.filter(p=>!p.element.classList.
 // ═══════════════════════════════════════════════════════════
 // MEETING
 // ═══════════════════════════════════════════════════════════
-function doStartMeeting(){if(GS.meetingActive&&GS.discPaused){GS.discPaused=false;d('disc-pause').textContent='⏸ 暂停';GS.discRun=true;GS.discTimer=setInterval(()=>{GS.discSec--;renderDisc();if(GS.discSec<=0){stopDisc();startMeetingOverAlert();lg('system','⏰','讨论时间结束！')}},1000);resumeMeetingBGM();return}if(GS.meetingActive)return;GS.meetingActive=true;GS.discPaused=false;GS.firstElimDone=false;GS.meetingElimCount=0;GS.firstElimPlayer=null;d('new-meeting').style.display='none';d('end-meeting').style.display='inline-flex';d('disc-pause').textContent='⏸ 暂停';stopDisc();GS.discSec=+d('disc-min').value*60||180;renderDisc();GS.discRun=true;GS.discTimer=setInterval(()=>{GS.discSec--;renderDisc();onStateChanged();if(GS.discSec<=0){stopDisc();startMeetingOverAlert();lg('system','⏰','讨论时间结束！')}},1000);sfxMeetingStart();setTimeout(()=>{if(!GS.muted&&!GS.bgmStopped)startMeetingBGM()},400);GS.players.forEach(p=>{p.votes=0;p.pkVotes=0});d('vote-rb').classList.remove('show');d('pk-section').classList.remove('show');GS.pkMode=false;GS.pkPlayers=[];GS.pkRound=0;GS.pkContext='first';setVotingLocked(false);refCands();updJailBoard();lg('system','🔔',`第${GS.meetRound}轮会议开始`);onStateChanged()}
+function doStartMeeting(){if(GS.meetingActive&&GS.discPaused){GS.discPaused=false;d('disc-pause').textContent='⏸ 暂停';GS.discRun=true;GS.discTimer=setInterval(()=>{GS.discSec--;renderDisc();if(GS.discSec<=0){stopDisc();startMeetingOverAlert();lg('system','⏰','讨论时间结束！')}},1000);resumeMeetingBGM();return}if(GS.meetingActive)return;GS.meetingActive=true;GS.discPaused=false;GS.firstElimDone=false;GS.meetingElimCount=0;GS.firstElimPlayer=null;d('new-meeting').style.display='none';d('end-meeting').style.display='inline-flex';d('disc-pause').textContent='⏸ 暂停';d('meeting-banner').style.display='block';d('meeting-banner-desc').textContent=`第 ${GS.meetRound} 轮讨论进行中…`;stopDisc();GS.discSec=+d('disc-min').value*60||180;renderDisc();GS.discRun=true;GS.discTimer=setInterval(()=>{GS.discSec--;renderDisc();onStateChanged();if(GS.discSec<=0){stopDisc();startMeetingOverAlert();lg('system','⏰','讨论时间结束！')}},1000);sfxMeetingStart();setTimeout(()=>{if(!GS.muted&&!GS.bgmStopped)startMeetingBGM()},400);GS.players.forEach(p=>{p.votes=0;p.pkVotes=0});d('vote-rb').classList.remove('show');d('pk-section').classList.remove('show');GS.pkMode=false;GS.pkPlayers=[];GS.pkRound=0;GS.pkContext='first';setVotingLocked(false);refCands();updJailBoard();lg('system','🔔',`第${GS.meetRound}轮会议开始`);socket.emit('sync-action',{roomId:currentRoomId,action:{type:'meeting-start',meetRound:GS.meetRound,discSec:GS.discSec}});onStateChanged()}
 d('new-meeting').addEventListener('click',doStartMeeting);
-d('end-meeting').addEventListener('click',()=>{stopDisc();stopMeetingOverAlert();sfxMeetingEnd();GS.meetingActive=false;GS.discPaused=false;GS.meetingBGMRunning=false;d('end-meeting').style.display='none';d('new-meeting').style.display='inline-flex';d('disc-pause').textContent='⏸ 暂停';setVotingLocked(true);processMeetingEnd();stopBG();if(!GS.muted&&!GS.bgmStopped)setTimeout(()=>startBG(),300);const fin=GS.meetRound;GS.meetRound++;d('m-round-input').value=GS.meetRound;GS.discSec=+d('disc-min').value*60||180;renderDisc();lg('system','🏁',`第${fin}轮会议结束`);d('meeting-end-msg').textContent=`第 ${fin} 轮会议已结束，计时器已重置为 ${d('disc-min').value} 分钟。`;showMod('mod-meeting-end');onStateChanged()});
+d('end-meeting').addEventListener('click',()=>{stopDisc();stopMeetingOverAlert();sfxMeetingEnd();GS.meetingActive=false;GS.discPaused=false;GS.meetingBGMRunning=false;d('meeting-banner').style.display='none';d('end-meeting').style.display='none';d('new-meeting').style.display='inline-flex';d('disc-pause').textContent='⏸ 暂停';setVotingLocked(true);processMeetingEnd();stopBG();if(!GS.muted&&!GS.bgmStopped)setTimeout(()=>startBG(),300);const fin=GS.meetRound;GS.meetRound++;d('m-round-input').value=GS.meetRound;GS.discSec=+d('disc-min').value*60||180;renderDisc();lg('system','🏁',`第${fin}轮会议结束`);d('meeting-end-msg').textContent=`第 ${fin} 轮会议已结束，计时器已重置为 ${d('disc-min').value} 分钟。`;socket.emit('sync-action',{roomId:currentRoomId,action:{type:'meeting-end'}});showMod('mod-meeting-end');onStateChanged()});
 d('meeting-end-ok').addEventListener('click',()=>hideMod('mod-meeting-end'));
 d('m-round-input').addEventListener('change',()=>{GS.meetRound=Math.max(1,+d('m-round-input').value||1);d('m-round-input').value=GS.meetRound});
 d('disc-pause').addEventListener('click',()=>{if(!GS.meetingActive){alert('请先开始会议！');return}if(GS.discRun){stopDisc();GS.discPaused=true;d('disc-pause').textContent='▶ 继续';pauseMeetingBGM();if(!GS.muted&&!GS.bgmStopped)startBG()}else{GS.discPaused=false;d('disc-pause').textContent='⏸ 暂停';GS.discRun=true;GS.discTimer=setInterval(()=>{GS.discSec--;renderDisc();if(GS.discSec<=0){stopDisc();startMeetingOverAlert();lg('system','⏰','讨论时间结束！')}},1000);stopBG();if(!GS.muted&&!GS.bgmStopped)startMeetingBGM()}});
 d('disc-reset').addEventListener('click',()=>{stopDisc();stopMeetingOverAlert();GS.discSec=+d('disc-min').value*60||180;renderDisc();GS.discPaused=false;d('disc-pause').textContent='⏸ 暂停'});
-function renderDisc(){const sec=Math.max(0,GS.discSec);const e=d('disc-clk');e.textContent=fmtTime(sec);e.classList.toggle('urgent',sec<=30)}
-function stopDisc(){if(GS.discTimer){clearInterval(GS.discTimer);GS.discTimer=null;GS.discRun=false}}
+function renderDisc(){const sec=Math.max(0,GS.discSec);const e=d('disc-clk');e.textContent=fmtTime(sec);e.classList.toggle('urgent',sec<=30);const mb=d('meeting-banner');if(mb&&mb.style.display!=='none'){d('meeting-banner-timer').textContent=fmtTime(sec)}}
+function stopDisc(){if(GS.discTimer){clearInterval(GS.discTimer);GS.discTimer=null;GS.discRun=false};if(!GS.meetingActive){d('meeting-banner').style.display='none'}}
 
 // VOTING LOGIC (full PK logic preserved)
 function processMeetingEnd(){const alive=GS.players.filter(p=>!p.element.classList.contains('eliminated'));if(!alive.length)return;const maxVotes=Math.max(0,...alive.map(p=>p.votes||0));if(maxVotes<=0){d('top-cands').innerHTML='<span style="color:var(--ts)">本轮无有效票数，无人出局。</span>';d('vote-rb').classList.add('show');d('pk-section').classList.remove('show');return}const topPlayers=alive.filter(p=>(p.votes||0)===maxVotes);if(topPlayers.length===1){const winner=topPlayers[0];d('top-cands').innerHTML=`<div class="tcc-chip">💀 ${winner.name} — ${winner.votes}票 · 第一位往生</div>`;d('vote-rb').classList.add('show');elimP(winner.element);GS.firstElimDone=true;GS.meetingElimCount=1;GS.firstElimPlayer=winner;lg('eliminate','🗳️',`${winner.name} 被投票淘汰（${winner.votes}票）— 第一位出局`);updStats();refCands();refPickers();onStateChanged();setupSecondVote(alive.filter(p=>p.id!==winner.id),maxVotes)}else{d('top-cands').innerHTML=topPlayers.map(p=>`<div class="tcc-chip tie">⚖️ ${p.name} — ${p.votes}票（加赛决第一名）</div>`).join('');d('vote-rb').classList.add('show');GS.firstElimDone=false;GS.meetingElimCount=0;GS.firstElimPlayer=null;GS.pkContext='first';startPKRound(topPlayers)}}
 function setupSecondVote(remainingAlive,firstMaxVotes){if(!remainingAlive||!remainingAlive.length){d('pk-section').classList.remove('show');return}const maxV2=Math.max(0,...remainingAlive.map(p=>p.votes||0));if(maxV2<=0){d('pk-section').classList.add('show');d('pk-section-title').textContent='🗳️ 第二轮投票';d('pk-context-msg').textContent='暂无其他玩家有票数。请手动进行第二轮投票：';buildSecondVoteCandList(remainingAlive);lg('system','🗳️','第一位已出局！请进行第二轮投票（投出第二位）…');return}const secondPlayers=remainingAlive.filter(p=>(p.votes||0)===maxV2);if(secondPlayers.length===1){const doomed=secondPlayers[0];elimP(doomed.element);GS.meetingElimCount=2;d('top-cands').innerHTML+=' <div class="tcc-chip">💀 '+doomed.name+' — '+doomed.votes+'票 · 第二位往生</div>';lg('eliminate','🗳️',`${doomed.name} 第二位被淘汰（${doomed.votes}票）`);updStats();refCands();refPickers();onStateChanged();d('pk-section').classList.remove('show');sfxPKEnd();d('pk-end-title').textContent='本轮结束！';d('pk-end-msg').textContent='本轮会议共淘汰两位修行者！';d('pk-end-elim-info').innerHTML=`<strong style="color:#A03030">💀 第二位往生者：</strong>${doomed.name}`;d('pk-end-ok').onclick=()=>hideMod('mod-pk-end');showMod('mod-pk-end')}else{d('top-cands').innerHTML+=secondPlayers.map(p=>`<div class="tcc-chip tie">⚖️ ${p.name} — ${p.votes}票（加赛决第二名）</div>`).join('');GS.pkContext='second';startPKRound(secondPlayers);lg('system','⚔️',`第二轮加赛！${secondPlayers.map(p=>p.name).join('、')} 平票，进入加赛`)}}
-function buildSecondVoteCandList(players){players.forEach(p=>{p.pkVotes=0});const list=d('pk-cand-list');list.innerHTML='';players.forEach(p=>{const row=document.createElement('div');row.className='cr';row.innerHTML=`<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="sv-bar-${p.id}" style="width:0%"></div></div><div class="vst"><input type="number" class="vnum-input" id="sv-in-${p.id}" value="0" min="0"></div>`;list.appendChild(row);const inp=row.querySelector(`#sv-in-${p.id}`);inp.addEventListener('focus',function(){if(this.value==='0')this.value=''});inp.addEventListener('blur',function(){if(this.value===''||isNaN(this.value))this.value='0';p.pkVotes=parseInt(this.value)||0;updSecondVoteBars(players)});inp.addEventListener('input',()=>{p.pkVotes=parseInt(inp.value)||0;updSecondVoteBars(players)})})}
+function buildSecondVoteCandList(players){players.forEach(p=>{p.pkVotes=0});const list=d('pk-cand-list');list.innerHTML='';players.forEach(p=>{const row=document.createElement('div');row.className='cr';row.innerHTML=`<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="sv-bar-${p.id}" style="width:0%"></div></div><div class="vst"><input type="number" class="vnum-input" id="sv-in-${p.id}" value="0" min="0"></div>`;list.appendChild(row);const inp=row.querySelector(`#sv-in-${p.id}`);inp.addEventListener('focus',function(){if(this.value==='0'||this.value==='')this.value=''});inp.addEventListener('blur',function(){if(this.value===''||isNaN(this.value))this.value='0';p.pkVotes=parseInt(this.value)||0;updSecondVoteBars(players)});inp.addEventListener('input',()=>{p.pkVotes=parseInt(inp.value)||0;updSecondVoteBars(players)})})}
 function updSecondVoteBars(players){const mx=Math.max(1,...players.map(p=>p.pkVotes||0));players.forEach(p=>{const b=d(`sv-bar-${p.id}`);if(b)b.style.width=Math.round(((p.pkVotes||0)/mx)*100)+'%'})}
 function startPKRound(players){GS.pkRound=(GS.pkRound||0)+1;GS.pkMode=true;GS.pkPlayers=players;players.forEach(p=>{p.pkVotes=0});const isSecond=GS.pkContext==='second';d('pk-section').classList.add('show');d('pk-section-title').textContent=isSecond?'🔁 第二位出局加赛':'🔁 加赛投票进行中';d('pk-context-msg').textContent=isSecond?'以下玩家加赛决出第二位：':'以下玩家进入加赛：';d('pk-confirm-btn').textContent=isSecond?'⚔️ 确认加赛淘汰（第二位）':'⚔️ 确认加赛淘汰';buildPKCandList(players);sfxPKStart();d('pk-round-badge').textContent=`第 ${GS.pkRound} 轮加赛`;d('pk-alert-title').textContent=isSecond?'第二位出局加赛！':'进入加赛环节！';d('pk-alert-context').textContent=isSecond?'以下玩家加赛决出第二位出局者！':'以下玩家票数相同，需要加赛！';const pkAlert=d('pk-alert-players');pkAlert.innerHTML='';players.forEach(p=>{const chip=document.createElement('div');chip.className='tcc-chip';chip.textContent=`${p.name} — 0票`;pkAlert.appendChild(chip)});showMod('mod-pk-alert');lg('system','⚔️',`${isSecond?'第二轮':''}加赛第${GS.pkRound}轮！${players.map(p=>p.name).join('、')} 进入加赛`)}
 d('pk-alert-ok').addEventListener('click',()=>hideMod('mod-pk-alert'));
 d('pk-skip-btn').addEventListener('click',()=>{showC1('玩家放弃本轮加赛/投票？将不产生更多出局者。',ok=>{if(!ok)return;GS.pkMode=false;GS.pkPlayers=[];GS.pkRound=0;GS.pkContext='first';d('pk-section').classList.remove('show');lg('system','🚫','玩家放弃投票，本轮不再产生出局者。');onStateChanged()})});
-function buildPKCandList(players){const list=d('pk-cand-list');list.innerHTML='';players.forEach(p=>{p.pkVotes=0;const row=document.createElement('div');row.className='cr';row.innerHTML=`<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="pkb-${p.id}" style="width:0%"></div></div><div class="vst"><input type="number" class="vnum-input" id="pkvin-${p.id}" value="0" min="0"></div>`;list.appendChild(row);const inp=row.querySelector(`#pkvin-${p.id}`);inp.addEventListener('focus',function(){if(this.value==='0')this.value=''});inp.addEventListener('blur',function(){if(this.value===''||isNaN(this.value))this.value='0';p.pkVotes=parseInt(this.value)||0;updPKBars()});inp.addEventListener('input',()=>{p.pkVotes=Math.max(0,parseInt(inp.value)||0);updPKBars()})})}
+function buildPKCandList(players){const list=d('pk-cand-list');list.innerHTML='';players.forEach(p=>{p.pkVotes=0;const row=document.createElement('div');row.className='cr';row.innerHTML=`<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="pkb-${p.id}" style="width:0%"></div></div><div class="vst"><input type="number" class="vnum-input" id="pkvin-${p.id}" value="0" min="0"></div>`;list.appendChild(row);const inp=row.querySelector(`#pkvin-${p.id}`);inp.addEventListener('focus',function(){if(this.value==='0'||this.value==='')this.value=''});inp.addEventListener('blur',function(){if(this.value===''||isNaN(this.value))this.value='0';p.pkVotes=parseInt(this.value)||0;updPKBars()});inp.addEventListener('input',()=>{p.pkVotes=Math.max(0,parseInt(inp.value)||0);updPKBars()})})}
 function updPKBars(){if(!GS.pkPlayers||!GS.pkPlayers.length)return;const mx=Math.max(1,...GS.pkPlayers.map(p=>p.pkVotes||0));GS.pkPlayers.forEach(p=>{const b=d(`pkb-${p.id}`);if(b)b.style.width=Math.round(((p.pkVotes||0)/mx)*100)+'%'})}
 d('pk-confirm-btn').addEventListener('click',()=>{if(!GS.pkMode){const aliveNow=GS.players.filter(p=>!p.element.classList.contains('eliminated'));const maxSV=Math.max(0,...aliveNow.map(p=>p.pkVotes||0));if(maxSV<=0){alert('第二轮尚无有效票数！');return}const topSV=aliveNow.filter(p=>(p.pkVotes||0)===maxSV);if(topSV.length===1){const doomed=topSV[0];elimP(doomed.element);GS.meetingElimCount=2;d('top-cands').innerHTML+=`<div class="tcc-chip">💀 ${doomed.name} — ${doomed.pkVotes}票 · 第二位往生</div>`;lg('eliminate','🗳️',`${doomed.name} 第二轮被淘汰（${doomed.pkVotes}票）`);d('pk-section').classList.remove('show');updStats();refCands();refPickers();onStateChanged();sfxPKEnd();d('pk-end-title').textContent='第二轮结束！';d('pk-end-msg').textContent='本轮会议共淘汰两位修行者！';d('pk-end-elim-info').innerHTML=`<strong style="color:#A03030">💀 第二位往生者：</strong>${doomed.name}`;d('pk-end-ok').onclick=()=>hideMod('mod-pk-end');showMod('mod-pk-end')}else{GS.pkContext='second';startPKRound(topSV)}return}if(!GS.pkPlayers||!GS.pkPlayers.length)return;const maxPK=Math.max(0,...GS.pkPlayers.map(p=>p.pkVotes||0));if(maxPK<=0){alert('加赛尚无投票！');return}const pkTop=GS.pkPlayers.filter(p=>(p.pkVotes||0)===maxPK);sfxPKEnd();if(pkTop.length>1){d('pk-section').classList.remove('show');setTimeout(()=>startPKRound(pkTop),400);return}const doomed=pkTop[0];const isSecond=GS.pkContext==='second';elimP(doomed.element);lg('eliminate','⚔️',`加赛结束：${doomed.name} 被淘汰（${doomed.pkVotes}票）— ${isSecond?'第二位出局':'第一位出局（加赛）'}`);GS.pkMode=false;GS.pkPlayers=[];GS.pkRound=0;updStats();refCands();refPickers();onStateChanged();if(!isSecond){GS.firstElimDone=true;GS.meetingElimCount=1;GS.firstElimPlayer=doomed;d('pk-section').classList.remove('show');d('top-cands').innerHTML+=`<div class="tcc-chip">💀 ${doomed.name} · 第一位往生（加赛）</div>`;const remainingAlive=GS.players.filter(p=>!p.element.classList.contains('eliminated'));const firstMaxVotes=Math.max(0,...GS.players.map(p=>p.votes||0));d('pk-end-title').textContent='加赛结束！';d('pk-end-msg').textContent='第一位出局者已确定！接下来请进行第二轮投票。';d('pk-end-elim-info').innerHTML=`<strong style="color:#A03030">💀 第一位往生者：</strong>${doomed.name}`;d('pk-end-ok').onclick=()=>{hideMod('mod-pk-end');GS.pkContext='second';setupSecondVote(remainingAlive,firstMaxVotes)};showMod('mod-pk-end')}else{GS.meetingElimCount=2;GS.firstElimDone=false;d('pk-section').classList.remove('show');d('top-cands').innerHTML+=`<div class="tcc-chip">💀 ${doomed.name} · 第二位往生（加赛）</div>`;d('pk-end-title').textContent='会议结束！';d('pk-end-msg').textContent='本轮会议共淘汰两位修行者！';d('pk-end-elim-info').innerHTML=`<strong style="color:#A03030">💀 第二位往生者：</strong>${doomed.name}`;d('pk-end-ok').onclick=()=>hideMod('mod-pk-end');showMod('mod-pk-end')}});
 d('pk-end-ok').addEventListener('click',()=>hideMod('mod-pk-end'));
@@ -1099,7 +1333,7 @@ d('pk-reset-btn').addEventListener('click',()=>{if(GS.pkPlayers)GS.pkPlayers.for
 
 // PICKERS
 function refPickers(){const alive=GS.players.filter(p=>!p.element.classList.contains('eliminated'));GS.selSher=null;GS.selAcc=null;GS.selAnnE=null;GS.selAnnR=null;['sher-picker','acc-picker'].forEach(gid=>{const g=d(gid);if(!g)return;g.innerHTML='';alive.forEach(p=>{const c=document.createElement('div');c.className='cpc';c.dataset.pid=p.id;c.textContent=p.name;c.addEventListener('click',()=>{if(gid==='sher-picker'){g.querySelectorAll('.cpc').forEach(x=>x.classList.remove('sel-s'));c.classList.add('sel-s');GS.selSher=p.id}else{g.querySelectorAll('.cpc').forEach(x=>x.classList.remove('sel-a'));c.classList.add('sel-a');GS.selAcc=p.id}});g.appendChild(c)})});const aeg=d('ann-elim-picker');if(!aeg)return;aeg.innerHTML='';GS.players.forEach(p=>{const dead=p.element.classList.contains('eliminated');const c=document.createElement('div');c.className='anc'+(dead?' es':'');c.dataset.pid=p.id;c.textContent=p.name+(dead?' 💀':'');if(!dead){c.addEventListener('click',()=>{aeg.querySelectorAll('.anc').forEach(x=>x.classList.remove('se'));c.classList.add('se');GS.selAnnE=p.id})}aeg.appendChild(c)});const arg=d('ann-res-picker');if(!arg)return;arg.innerHTML='';GS.players.forEach(p=>{const dead=p.element.classList.contains('eliminated');const c=document.createElement('div');c.className='anc'+(!dead?' es':'');c.dataset.pid=p.id;c.textContent=p.name+(!dead?' 💚':'');if(dead){c.addEventListener('click',()=>{arg.querySelectorAll('.anc').forEach(x=>x.classList.remove('sr2'));c.classList.add('sr2');GS.selAnnR=p.id})}arg.appendChild(c)})}
-function refCands(){const list=d('cand-list');if(!list)return;list.innerHTML='';const alive=GS.players.filter(p=>!p.element.classList.contains('eliminated'));if(!alive.length){list.innerHTML='<div style="color:var(--ts);font-size:.84rem;padding:10px">暂无存活修行者</div>';return}alive.forEach(p=>{const row=document.createElement('div');row.className='cr';row.innerHTML=`<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="vb-${p.id}" style="width:${Math.max(0,Math.round(((p.votes||0)/Math.max(1,...alive.map(a=>a.votes||0)))*100))}%"></div></div><div class="vst"><input type="number" class="vnum-input" id="vin-${p.id}" value="${p.votes||0}" min="0"></div>`;list.appendChild(row);const inp=row.querySelector(`#vin-${p.id}`);inp.addEventListener('focus',function(){if(this.value==='0')this.value=''});inp.addEventListener('blur',function(){if(this.value===''||isNaN(this.value))this.value='0';p.votes=parseInt(this.value)||0;updJailBoard();onStateChanged()});inp.addEventListener('input',()=>{if(GS.votingLocked){alert('请先开始会议！');inp.value=0;return}p.votes=Math.max(0,parseInt(inp.value)||0);updJailBoard();onStateChanged()})});setVotingLocked(GS.votingLocked)}
+function refCands(){const list=d('cand-list');if(!list)return;list.innerHTML='';const alive=GS.players.filter(p=>!p.element.classList.contains('eliminated'));if(!alive.length){list.innerHTML='<div style="color:var(--ts);font-size:.84rem;padding:10px">暂无存活修行者</div>';return}alive.forEach(p=>{const row=document.createElement('div');row.className='cr';row.innerHTML=`<div class="cn">${escHtml(p.name)}</div><div class="vbw"><div class="vbf" id="vb-${p.id}" style="width:${Math.max(0,Math.round(((p.votes||0)/Math.max(1,...alive.map(a=>a.votes||0)))*100))}%"></div></div><div class="vst"><input type="number" class="vnum-input" id="vin-${p.id}" value="${p.votes||0}" min="0"></div>`;list.appendChild(row);const inp=row.querySelector(`#vin-${p.id}`);inp.addEventListener('focus',function(){if(this.value==='0'||this.value==='')this.value=''});inp.addEventListener('blur',function(){if(this.value===''||isNaN(this.value))this.value='0';p.votes=parseInt(this.value)||0;updJailBoard();onStateChanged()});inp.addEventListener('input',()=>{if(GS.votingLocked){alert('请先开始会议！');inp.value=0;return}p.votes=Math.max(0,parseInt(inp.value)||0);updJailBoard();onStateChanged()})});setVotingLocked(GS.votingLocked)}
 d('reset-votes').addEventListener('click',()=>{GS.players.forEach(p=>{p.votes=0;p.pkVotes=0;const vi=d(`vin-${p.id}`);if(vi)vi.value=0;const pi=d(`pkvin-${p.id}`);if(pi)pi.value=0;const si2=d(`sv-in-${p.id}`);if(si2)si2.value=0});d('vote-rb').classList.remove('show');d('pk-section').classList.remove('show');GS.pkMode=false;GS.pkPlayers=[];GS.pkRound=0;GS.pkContext='first';GS.firstElimDone=false;GS.meetingElimCount=0;GS.firstElimPlayer=null;refCands();updJailBoard();onStateChanged()});
 d('verify-btn').addEventListener('click',()=>{const sid=GS.selSher,aid=GS.selAcc;if(!sid||!aid){alert('请选择护法鹅和被指认者！');return}if(sid===aid){alert('不能指认自己！');return}const sher=GS.players.find(p=>p.id===sid),acc=GS.players.find(p=>p.id===aid);if(!sher||!acc)return;if(sher.element.dataset.role!=='sheriff'){showResult(false,'⚠️','身份不符',`${sher.name} 不是护法鹅！`,'');return}const ar=acc.element.dataset.role,isDuck=ar==='duck';if(isDuck){showResult(true,'✅','挑战成功！',`${acc.name} 是【${RN[ar]}】！`,'→ 鸭子往生，护法鹅获胜！',()=>{elimP(acc.element);updStats();refCands();refPickers();lg('eliminate','⚔️',`护法鹅挑战成功！${acc.name}往生！`);onStateChanged()})}else{showResult(false,'❌','挑战失败！',`${acc.name} 不是鸭子！`,`→ 护法鹅 ${sher.name} 自我往生！`,()=>{elimP(sher.element);updStats();refCands();refPickers();lg('eliminate','⚔️',`护法鹅挑战失败！${sher.name}自我往生！`);onStateChanged()})}});
 d('ann-elim-btn').addEventListener('click',()=>{if(!GS.selAnnE){alert('请先选择存活的修行者！');return}const p=GS.players.find(x=>x.id===GS.selAnnE);if(!p)return;if(p.element.classList.contains('eliminated')){alert('该修行者已往生！');return}showC1(`宣布 ${p.name} 往生？`,ok=>{if(!ok)return;elimP(p.element);updStats();refCands();refPickers();onStateChanged()})});
@@ -1117,7 +1351,7 @@ d('hide-neutral').addEventListener('click',()=>{document.querySelectorAll('.nr')
 d('new-game-btn').addEventListener('click',()=>showMod('mod-newgame'));
 d('ng-cancel').addEventListener('click',()=>hideMod('mod-newgame'));
 d('ng-confirm1').addEventListener('click',()=>{hideMod('mod-newgame');doNewGame()});
-function doNewGame(){if(GS.sabTimer){clearInterval(GS.sabTimer);GS.sabTimer=null}stopSabAlert();d('sab-banner').classList.remove('active');stopDisc();stopMeetingOverAlert();GS.meetingActive=false;GS.discPaused=false;GS.meetingBGMRunning=false;d('end-meeting').style.display='none';d('new-meeting').style.display='inline-flex';d('disc-pause').textContent='⏸ 暂停';setVotingLocked(true);stopBG();GS.teams=JSON.parse(JSON.stringify(DEFAULT_TEAMS));buildTeamConfigUI();['cnt-goose','cnt-det','cnt-sher','cnt-duck','cnt-pig','cnt-dodo'].forEach(id=>{const el=d(id);if(el)el.value=0});document.getElementById('teams-container').innerHTML='';GS.players=[];GS.totalTasks=0;GS.meetRound=1;GS.sabSuccessCount=0;GS.rolesVis=false;GS.pigReveal=false;GS.dodoReveal=false;GS.pkMode=false;GS.pkPlayers=[];GS.pkRound=0;GS.pkContext='first';GS.taskTarget=80;GS.firstElimDone=false;GS.meetingElimCount=0;GS.firstElimPlayer=null;GS.sabPunishKillList=[];d('m-round-input').value=1;d('tgt-input').value=80;si('tgt-label',80);si('wc-task',80);d('sl-pig').textContent='秘密 🔒';d('sl-dodo').textContent='秘密 🔒';d('vote-rb').classList.remove('show');d('pk-section').classList.remove('show');d('ev-log').innerHTML='';GS.discSec=+d('disc-min').value*60||180;renderDisc();updStats();updTT();refCands();refPickers();d('step2-btn').disabled=true;d('step3-btn').disabled=true;goToStep(1);if(!GS.muted&&!GS.bgmStopped)setTimeout(()=>startBG(),300);onStateChanged();lg('system','🌅','新游戏开始！所有进度已清空。')}
+function doNewGame(){if(GS.sabTimer){clearInterval(GS.sabTimer);GS.sabTimer=null}stopSabAlert();d('sab-banner').classList.remove('active');d('meeting-banner').style.display='none';stopDisc();stopMeetingOverAlert();GS.meetingActive=false;GS.discPaused=false;GS.meetingBGMRunning=false;d('end-meeting').style.display='none';d('new-meeting').style.display='inline-flex';d('disc-pause').textContent='⏸ 暂停';setVotingLocked(true);stopBG();GS.teams=JSON.parse(JSON.stringify(DEFAULT_TEAMS));buildTeamConfigUI();['cnt-goose','cnt-det','cnt-sher','cnt-duck','cnt-pig','cnt-dodo'].forEach(id=>{const el=d(id);if(el)el.value=0});document.getElementById('teams-container').innerHTML='';GS.players=[];GS.totalTasks=0;GS.meetRound=1;GS.sabSuccessCount=0;GS.rolesVis=false;GS.pigReveal=false;GS.dodoReveal=false;GS.pkMode=false;GS.pkPlayers=[];GS.pkRound=0;GS.pkContext='first';GS.taskTarget=80;GS.firstElimDone=false;GS.meetingElimCount=0;GS.firstElimPlayer=null;GS.sabPunishKillList=[];d('m-round-input').value=1;d('tgt-input').value=80;si('tgt-label',80);si('wc-task',80);d('sl-pig').textContent='秘密 🔒';d('sl-dodo').textContent='秘密 🔒';d('vote-rb').classList.remove('show');d('pk-section').classList.remove('show');d('ev-log').innerHTML='';GS.discSec=+d('disc-min').value*60||180;renderDisc();updStats();updTT();refCands();refPickers();d('step2-btn').disabled=true;d('step3-btn').disabled=true;goToStep(1);if(!GS.muted&&!GS.bgmStopped)setTimeout(()=>startBG(),300);onStateChanged();lg('system','🌅','新游戏开始！所有进度已清空。')}
 
 // END GAME
 d('end-game-btn').addEventListener('click',()=>showMod('mod-eg-confirm'));
@@ -1164,9 +1398,36 @@ function spawnBurst(ov){const x=rnd(30,window.innerWidth-30),y=rnd(30,window.inn
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
+
+// 为所有数字输入框添加：点击0时清除显示
+function initZeroClearInputs() {
+  // 所有包含数字输入的class
+  const numberInputSelectors = ['.ni', '.ri2', '.rni', '.vnum-input', '.team-count-direct', '.vin-input'];
+  
+  numberInputSelectors.forEach(selector => {
+    document.querySelectorAll(selector).forEach(inp => {
+      inp.addEventListener('focus', function() {
+        if (this.value === '0' || this.value === '') {
+          this.value = '';
+        }
+      });
+      
+      inp.addEventListener('blur', function() {
+        if (this.value === '' || isNaN(this.value)) {
+          this.value = '0';
+        }
+      });
+    });
+  });
+  
+  // 动态添加的输入框也需要处理（投票、第二轮投票等）
+  // 这些在对应的生成函数中已经处理了
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   d('init-t').textContent = gt();
   document.querySelectorAll('.nr').forEach(e=>e.style.display='none');
+  d('meeting-banner').style.display = 'none';
   buildTeamConfigUI();
   renderDisc();
   buildMusicGrid();
@@ -1176,6 +1437,9 @@ document.addEventListener('DOMContentLoaded', () => {
   d('my-room-code-display').textContent = myRoomId;
   d('leave-room-btn').style.display = 'none';
   setVotingLocked(true);
+
+  // 初始化所有数字输入框的0清除功能
+  initZeroClearInputs();
 
   // Start in own room
   currentRoomId = myRoomId;

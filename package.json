@@ -1,0 +1,17 @@
+{
+  "name": "goose-duck-role-manager",
+  "version": "1.0.0",
+  "description": "鹅鸭杀游戏工委控制台 - 跨网络实时同步版",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["goose", "duck", "game", "role"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1"
+  }
+}
