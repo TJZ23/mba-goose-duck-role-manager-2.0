@@ -3037,7 +3037,7 @@
           <div class="mrow" style="margin-bottom:9px"><label>任务描述：</label><input type="text" id="sab-desc" class="ti2"
               placeholder="例：大殿灯火熄灭，需10人前往指定点扶正蜡烛"></div>
           <div class="mrow"><label>倒计时（秒）：</label><input type="number" class="ni" id="sab-dur" value="120" min="30"
-              max="600"><button class="btn bd" id="trig-sab">🚨 触发破坏</button></div>
+              max="600"><button class="btn bd" id="trig-sab">🚨 触发破坏</button><span id="trig-sab-cd-text" style="display:none; font-size:0.8rem; color:var(--erc); font-weight:bold; margin-left: 12px;"></span><button class="btn bo sm" id="trig-sab-refresh-btn" style="display:none; padding:2px 6px; font-size:0.7rem; margin-left:8px;">立即刷新</button></div>
         </div>
         <div class="sbox">
           <h4>💀 失败惩罚配置</h4>
@@ -3804,7 +3804,8 @@
       meetingBGMRunning: false,
       meetingOverAlert: false, meetingOverAlertIv: null,
       sabPunishKillList: [],
-      emergencyTimer: null, emergencySoundIv: null, emergencyActive: false, emergencyCooldown: false
+      emergencyTimer: null, emergencySoundIv: null, emergencyActive: false, emergencyCooldown: false,
+      sabCooldownTimer: null, sabCooldownActive: false
     };
 
     function d(id) { return document.getElementById(id) }
@@ -3837,6 +3838,8 @@
     function stopEmergencyAlert(triggerCooldown = true) { if (GS.emergencySoundIv) { clearInterval(GS.emergencySoundIv); GS.emergencySoundIv = null } GS.emergencyActive = false; d('emergency-alert-btn').innerHTML = '🚨 紧急通报'; d('emergency-alert-btn').classList.remove('bs'); d('emergency-alert-btn').classList.add('bd'); if (triggerCooldown) startEmergencyCooldown(300) }
     function startEmergencyCooldown(sec) { if (GS.emergencyTimer) clearInterval(GS.emergencyTimer); GS.emergencyCooldown = true; let remain = sec; d('emergency-alert-btn').style.display = 'none'; d('emergency-cd-text').style.display = 'inline-block'; d('emergency-refresh-btn').style.display = 'inline-block'; const tick = () => { if (remain <= 0) { endEmergencyCooldown(); return } const m = Math.floor(remain / 60); const s = remain % 60; d('emergency-cd-text').textContent = `⏱️ ${m}:${s.toString().padStart(2, '0')} 冷却中`; remain-- }; tick(); GS.emergencyTimer = setInterval(tick, 1000) }
     function endEmergencyCooldown() { if (GS.emergencyTimer) { clearInterval(GS.emergencyTimer); GS.emergencyTimer = null } GS.emergencyCooldown = false; d('emergency-cd-text').style.display = 'none'; d('emergency-refresh-btn').style.display = 'none'; d('emergency-alert-btn').style.display = 'inline-flex' }
+    function startSabotageCooldown(sec) { if (GS.sabCooldownTimer) clearInterval(GS.sabCooldownTimer); GS.sabCooldownActive = true; let remain = sec; d('trig-sab').style.display = 'none'; d('trig-sab-cd-text').style.display = 'inline-block'; d('trig-sab-refresh-btn').style.display = 'inline-block'; const tick = () => { if (remain <= 0) { endSabotageCooldown(); return } const m = Math.floor(remain / 60); const s = remain % 60; d('trig-sab-cd-text').textContent = `⏱️ 冷却中（${m}:${s.toString().padStart(2, '0')}）`; remain-- }; tick(); GS.sabCooldownTimer = setInterval(tick, 1000) }
+    function endSabotageCooldown() { if (GS.sabCooldownTimer) { clearInterval(GS.sabCooldownTimer); GS.sabCooldownTimer = null } GS.sabCooldownActive = false; d('trig-sab-cd-text').style.display = 'none'; d('trig-sab-refresh-btn').style.display = 'none'; d('trig-sab').style.display = 'inline-block' }
 
     // BGM
     const SC = { penta: [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 784, 880], minorP: [220, 261.63, 311.13, 349.23, 392, 440, 523.25, 622.25, 698.46, 784], chinese: [261.63, 293.66, 349.23, 392, 466.16, 523.25, 587.33, 698.46, 784, 932.33], dorian: [261.63, 293.66, 311.13, 349.23, 392, 440, 466.16, 523.25, 587.33, 622.25], major: [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25, 587.33, 659.25], mixolyd: [261.63, 293.66, 329.63, 349.23, 392, 440, 466.16, 523.25, 587.33, 659.25], wholeTone: [261.63, 293.66, 329.63, 369.99, 415.30, 466.16, 523.25, 587.33, 659.25, 739.99], arabian: [261.63, 277.18, 329.63, 349.23, 392, 415.30, 493.88, 523.25, 587.33, 622.25] };
@@ -3921,7 +3924,7 @@
     // ═══════════════════════════════════════════════════════════
     // SABOTAGE
     // ═══════════════════════════════════════════════════════════
-    d('trig-sab').addEventListener('click', () => { if (GS.sabTimer) { alert('已有临时任务进行中！'); return } const desc = d('sab-desc').value || '魔罗鸭发动破坏！'; const dur = +d('sab-dur').value || 120; GS.sabSec = dur; d('sab-desc-disp').textContent = desc; d('sab-banner').classList.add('active'); updSabT(); stopBG(); startSabAlert(); GS.sabTimer = setInterval(() => { GS.sabSec--; updSabT(); onStateChanged(); if (GS.sabSec <= 0) { clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); autoSabFail() } }, 1000); lg('sabotage', '🚨', `临时任务：「${desc}」限时${dur}秒`); activateTab('dash'); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'sabotage-start', sabSec: dur, sabDesc: desc } }); onStateChanged() });
+    d('trig-sab').addEventListener('click', () => { if (GS.sabCooldownActive) { alert('触发破坏仍在冷却中（20分钟）！'); return } if (GS.sabTimer) { alert('已有临时任务进行中！'); return } const desc = d('sab-desc').value || '魔罗鸭发动破坏！'; const dur = +d('sab-dur').value || 120; GS.sabSec = dur; d('sab-desc-disp').textContent = desc; d('sab-banner').classList.add('active'); updSabT(); stopBG(); startSabAlert(); GS.sabTimer = setInterval(() => { GS.sabSec--; updSabT(); onStateChanged(); if (GS.sabSec <= 0) { clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); autoSabFail() } }, 1000); lg('sabotage', '🚨', `临时任务：「${desc}」限时${dur}秒`); startSabotageCooldown(1200); activateTab('dash'); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'sabotage-start', sabSec: dur, sabDesc: desc } }); onStateChanged() });
     function showSabResult(success) {
       d('sab-result-icon').textContent = success ? '✅' : '💀'; d('sab-result-title').textContent = success ? '临时任务完成！' : '临时任务失败！'; d('sab-result-msg').textContent = success ? '所有修行者齐心协力，成功守护了道场！' : '时间已到，任务宣告失败。请选择要执行的惩罚（选其一）或取消惩罚：'; const ps = d('sab-punish-section'), cb = d('sab-punish-cancel-btn'); ps.style.display = success ? 'none' : 'block'; cb.style.display = success ? 'none' : 'inline-flex'; if (!success) { const pct = parseInt(d('sd-pct').value) || 10; const nKill = parseInt(d('sk-n').value) || 2; d('sab-punish-pct-label').textContent = pct; d('sab-punish-n-label').textContent = nKill; const before = GS.totalTasks; const willDeduct = Math.floor(before * pct / 100); d('sab-deduct-preview').textContent = `当前任务 ${before} 个 → 扣除 ${willDeduct} 个 → 剩余 ${Math.max(0, before - willDeduct)} 个`; const killable = GS.players.filter(p => !p.element.classList.contains('eliminated') && GR.includes(p.element.dataset.role)); const preKill = [...killable].sort(() => Math.random() - .5).slice(0, Math.min(nKill, killable.length)); GS.sabPunishKillList = preKill; d('sab-kill-preview').textContent = preKill.length > 0 ? `将暴毙：${preKill.map(p => p.name).join('、')}（共 ${preKill.length} 名）` : '当前没有可暴毙的存活鹅'; document.querySelectorAll('input[name="sab-punish-radio"]').forEach(r => r.checked = false); document.querySelectorAll('.sab-punish-opt').forEach(o => o.classList.remove('selected')); document.querySelectorAll('input[name="sab-punish-radio"]').forEach(r => { r.onchange = () => { document.querySelectorAll('.sab-punish-opt').forEach(o => o.classList.remove('selected')); if (r.checked) r.closest('.sab-punish-opt').classList.add('selected') } }) }
       cb.onclick = () => { hideMod('mod-sab-result'); lg('sabotage', '💀', '临时任务失败！选择不执行额外惩罚。'); if (!GS.muted && !GS.bgmStopped) startBG() };
@@ -4102,6 +4105,7 @@
 
       d('emergency-alert-btn').addEventListener('click', () => { if (GS.emergencyCooldown) { alert('冷却中，暂不可用！'); return; } if (GS.emergencyActive) { stopEmergencyAlert(true); } else { showC1('确定要拉响紧急通报吗？声音将会持续响起！', ok => { if (ok) startEmergencyAlert(); }); } });
       d('emergency-refresh-btn').addEventListener('click', () => { showC1('确定要立即刷新紧急通报冷却吗？', ok => { if (ok) endEmergencyCooldown(); }); });
+      d('trig-sab-refresh-btn').addEventListener('click', () => { showC1('确定要立即刷新触发破坏冷却吗？', ok => { if (ok) endSabotageCooldown(); }); });
 
       // First interaction unlocks audio
       const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
