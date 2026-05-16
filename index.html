@@ -2686,6 +2686,11 @@
     <span style="font-size:.76rem;color:var(--ts);">房间：</span>
     <span class="sync-id" id="room-id-display" title="点击复制">—</span>
     <div class="sync-btns">
+      <div id="emergency-cd-text" style="display:none; font-size:0.75rem; color:var(--erc); font-weight:bold;">⏱️ 冷却中...
+      </div>
+      <button class="btn bo sm" id="emergency-refresh-btn"
+        style="display:none; padding:2px 6px; font-size:0.7rem;">立即刷新</button>
+      <button class="btn bd sm" id="emergency-alert-btn">🚨 紧急通报</button>
       <div class="online-badge" id="online-badge">👥 <span id="online-count">1</span> 人在线</div>
       <button class="btn bp sm" id="join-room-btn">🔗 加入房间</button>
       <button class="btn bleave sm" id="leave-room-btn" style="display:none">🚪 退出房间</button>
@@ -3079,6 +3084,10 @@
   <div class="am" id="act-menu">
     <div class="amname" id="am-pname">玩家</div>
     <button class="ab ta" id="am-add">✅ +1 完成任务</button>
+    <button class="ab ta" id="am-add-2" style="background: linear-gradient(135deg, #A8B860, #8F9E4A);">✅ +2
+      完成任务</button>
+    <button class="ab ta" id="am-add-3" style="background: linear-gradient(135deg, #7FA880, #5C8860);">✅ +3
+      完成任务</button>
     <button class="ab ts" id="am-sub">❌ -1 任务</button>
     <button class="ab el" id="am-elim">💀 往生</button>
     <button class="ab re" id="am-res" style="display:none">✨ 重生</button>
@@ -3786,6 +3795,7 @@
       meetingBGMRunning: false,
       meetingOverAlert: false, meetingOverAlertIv: null,
       sabPunishKillList: [],
+      emergencyTimer: null, emergencySoundIv: null, emergencyActive: false, emergencyCooldown: false
     };
 
     function d(id) { return document.getElementById(id) }
@@ -3814,6 +3824,10 @@
     function stopSabAlert() { if (GS.sabAlertIv) { clearInterval(GS.sabAlertIv); GS.sabAlertIv = null } }
     function startMeetingOverAlert() { if (GS.meetingOverAlertIv) return; GS.meetingOverAlert = true; const alarm = () => { if (!GS.meetingOverAlert || GS.muted) return; tone(1400, .06, 'square', .6); setTimeout(() => { if (GS.meetingOverAlert && !GS.muted) tone(1000, .06, 'square', .55) }, 90) }; alarm(); GS.meetingOverAlertIv = setInterval(() => { if (!GS.meetingOverAlert) { stopMeetingOverAlert(); return } alarm() }, 550) }
     function stopMeetingOverAlert() { GS.meetingOverAlert = false; if (GS.meetingOverAlertIv) { clearInterval(GS.meetingOverAlertIv); GS.meetingOverAlertIv = null } }
+    function startEmergencyAlert() { if (GS.emergencySoundIv) return; GS.emergencyActive = true; d('emergency-alert-btn').innerHTML = '🔕 停止紧急通报'; d('emergency-alert-btn').classList.remove('bd'); d('emergency-alert-btn').classList.add('bs'); const alarm = () => { if (GS.muted) return; tone(800, .4, 'sawtooth', .7); setTimeout(() => { if (!GS.muted) tone(600, .4, 'sawtooth', .7) }, 400) }; alarm(); GS.emergencySoundIv = setInterval(alarm, 800) }
+    function stopEmergencyAlert(triggerCooldown = true) { if (GS.emergencySoundIv) { clearInterval(GS.emergencySoundIv); GS.emergencySoundIv = null } GS.emergencyActive = false; d('emergency-alert-btn').innerHTML = '🚨 紧急通报'; d('emergency-alert-btn').classList.remove('bs'); d('emergency-alert-btn').classList.add('bd'); if (triggerCooldown) startEmergencyCooldown(300) }
+    function startEmergencyCooldown(sec) { if (GS.emergencyTimer) clearInterval(GS.emergencyTimer); GS.emergencyCooldown = true; let remain = sec; d('emergency-alert-btn').style.display = 'none'; d('emergency-cd-text').style.display = 'inline-block'; d('emergency-refresh-btn').style.display = 'inline-block'; const tick = () => { if (remain <= 0) { endEmergencyCooldown(); return } const m = Math.floor(remain / 60); const s = remain % 60; d('emergency-cd-text').textContent = `⏱️ ${m}:${s.toString().padStart(2, '0')} 冷却中`; remain-- }; tick(); GS.emergencyTimer = setInterval(tick, 1000) }
+    function endEmergencyCooldown() { if (GS.emergencyTimer) { clearInterval(GS.emergencyTimer); GS.emergencyTimer = null } GS.emergencyCooldown = false; d('emergency-cd-text').style.display = 'none'; d('emergency-refresh-btn').style.display = 'none'; d('emergency-alert-btn').style.display = 'inline-flex' }
 
     // BGM
     const SC = { penta: [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 784, 880], minorP: [220, 261.63, 311.13, 349.23, 392, 440, 523.25, 622.25, 698.46, 784], chinese: [261.63, 293.66, 349.23, 392, 466.16, 523.25, 587.33, 698.46, 784, 932.33], dorian: [261.63, 293.66, 311.13, 349.23, 392, 440, 466.16, 523.25, 587.33, 622.25], major: [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25, 587.33, 659.25], mixolyd: [261.63, 293.66, 329.63, 349.23, 392, 440, 466.16, 523.25, 587.33, 659.25], wholeTone: [261.63, 293.66, 329.63, 369.99, 415.30, 466.16, 523.25, 587.33, 659.25, 739.99], arabian: [261.63, 277.18, 329.63, 349.23, 392, 415.30, 493.88, 523.25, 587.33, 622.25] };
@@ -3865,6 +3879,8 @@
     bdEl.addEventListener('click', closeMenu);
     d('am-close').addEventListener('click', closeMenu);
     d('am-add').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return; p.tasks++; c.querySelector('.tc').textContent = p.tasks; GS.totalTasks++; c.classList.add('tf'); setTimeout(() => c.classList.remove('tf'), 650); sfxTask(); updStats(); updTT(); lg('task', '✅', `${p.name} 完成任务（共${p.tasks}个）· 全场${GS.totalTasks}`); onStateChanged(); closeMenu() });
+    d('am-add-2').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return; p.tasks += 2; c.querySelector('.tc').textContent = p.tasks; GS.totalTasks += 2; c.classList.add('tf'); setTimeout(() => c.classList.remove('tf'), 650); sfxTask(); updStats(); updTT(); lg('task', '✅', `${p.name} 完成任务 +2（共${p.tasks}个）· 全场${GS.totalTasks}`); onStateChanged(); closeMenu() });
+    d('am-add-3').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return; p.tasks += 3; c.querySelector('.tc').textContent = p.tasks; GS.totalTasks += 3; c.classList.add('tf'); setTimeout(() => c.classList.remove('tf'), 650); sfxTask(); updStats(); updTT(); lg('task', '✅', `${p.name} 完成任务 +3（共${p.tasks}个）· 全场${GS.totalTasks}`); onStateChanged(); closeMenu() });
     d('am-sub').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p || p.tasks <= 0) return; p.tasks--; c.querySelector('.tc').textContent = p.tasks; GS.totalTasks = Math.max(0, GS.totalTasks - 1); updStats(); updTT(); lg('deduct', '❌', `${p.name} 任务-1（剩${p.tasks}）`); onStateChanged(); closeMenu() });
     d('am-elim').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者往生吗？', ok => { if (!ok) return; elimP(c); updStats(); refCands(); refPickers(); onStateChanged() }) });
     d('am-res').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者重生吗？', ok => { if (!ok) return; resP(c); updStats(); refCands(); refPickers(); onStateChanged() }) });
@@ -3907,8 +3923,8 @@
     }
     function autoSabFail() { d('sab-banner').classList.remove('active'); sfxFail(); showSabResult(false); lg('sabotage', '💀', '临时任务倒计时结束，宣告失败！'); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'sabotage-fail' } }) }
     function updSabT() { d('sab-timer').textContent = fmtTime(GS.sabSec) }
-    d('sab-ok').addEventListener('click', () => { clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); d('sab-banner').classList.remove('active'); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 400); GS.sabSuccessCount++; updStats(); lg('system', '✅', '临时任务完成！'); showSabResult(true); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'sabotage-complete', sabSuccessCount: GS.sabSuccessCount } }); onStateChanged() });
-    d('sab-fail').addEventListener('click', () => { clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); d('sab-banner').classList.remove('active'); autoSabFail(); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'sabotage-fail' } }) });
+    d('sab-ok').addEventListener('click', () => { clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); d('sab-banner').classList.remove('active'); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 400); GS.sabSuccessCount++; updStats(); lg('system', '✅', '临时任务完成！'); showSabResult(true); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'sabotage-complete', sabSuccessCount: GS.sabSuccessCount } }); stopEmergencyAlert(true); startEmergencyCooldown(300); onStateChanged() });
+    d('sab-fail').addEventListener('click', () => { clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); d('sab-banner').classList.remove('active'); autoSabFail(); stopEmergencyAlert(true); startEmergencyCooldown(300); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'sabotage-fail' } }) });
     d('sd-btn').addEventListener('click', () => { const pct = parseInt(d('sd-pct').value) || 10; const before = GS.totalTasks; const willDeduct = Math.floor(before * pct / 100); showC1(`扣除 ${pct}% 任务进度（-${willDeduct}个，剩${Math.max(0, before - willDeduct)}个），确认？`, ok => { if (ok) dedPct(pct) }) });
     d('sk-btn').addEventListener('click', () => { const n = parseInt(d('sk-n').value) || 2; showC1(`随机暴毙 ${n} 名鹅，确认？`, ok => { if (ok) rkill(n, '破坏惩罚暴毙') }) });
 
@@ -3924,7 +3940,7 @@
     // ═══════════════════════════════════════════════════════════
     function doStartMeeting() { if (GS.meetingActive && GS.discPaused) { GS.discPaused = false; d('disc-pause').textContent = '⏸ 暂停'; GS.discRun = true; GS.discTimer = setInterval(() => { GS.discSec--; renderDisc(); if (GS.discSec <= 0) { stopDisc(); startMeetingOverAlert(); lg('system', '⏰', '讨论时间结束！') } }, 1000); resumeMeetingBGM(); return } if (GS.meetingActive) return; GS.meetingActive = true; GS.discPaused = false; GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; d('new-meeting').style.display = 'none'; d('end-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; d('meeting-banner').style.display = 'block'; d('meeting-banner-desc').textContent = `第 ${GS.meetRound} 轮讨论进行中…`; stopDisc(); GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); GS.discRun = true; GS.discTimer = setInterval(() => { GS.discSec--; renderDisc(); onStateChanged(); if (GS.discSec <= 0) { stopDisc(); startMeetingOverAlert(); lg('system', '⏰', '讨论时间结束！') } }, 1000); sfxMeetingStart(); setTimeout(() => { if (!GS.muted && !GS.bgmStopped) startMeetingBGM() }, 400); GS.players.forEach(p => { p.votes = 0; p.pkVotes = 0 }); d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show'); GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first'; setVotingLocked(false); refCands(); updJailBoard(); lg('system', '🔔', `第${GS.meetRound}轮会议开始`); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'meeting-start', meetRound: GS.meetRound, discSec: GS.discSec } }); onStateChanged() }
     d('new-meeting').addEventListener('click', doStartMeeting);
-    d('end-meeting').addEventListener('click', () => { stopDisc(); stopMeetingOverAlert(); sfxMeetingEnd(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false; d('meeting-banner').style.display = 'none'; d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); processMeetingEnd(); stopBG(); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300); const fin = GS.meetRound; GS.meetRound++; d('m-round-input').value = GS.meetRound; GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); lg('system', '🏁', `第${fin}轮会议结束`); d('meeting-end-msg').textContent = `第 ${fin} 轮会议已结束，计时器已重置为 ${d('disc-min').value} 分钟。`; socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'meeting-end' } }); showMod('mod-meeting-end'); onStateChanged() });
+    d('end-meeting').addEventListener('click', () => { stopDisc(); stopMeetingOverAlert(); sfxMeetingEnd(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false; d('meeting-banner').style.display = 'none'; d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); processMeetingEnd(); stopBG(); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300); const fin = GS.meetRound; GS.meetRound++; d('m-round-input').value = GS.meetRound; GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); lg('system', '🏁', `第${fin}轮会议结束`); d('meeting-end-msg').textContent = `第 ${fin} 轮会议已结束，计时器已重置为 ${d('disc-min').value} 分钟。`; socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'meeting-end' } }); stopEmergencyAlert(true); startEmergencyCooldown(300); showMod('mod-meeting-end'); onStateChanged() });
     d('meeting-end-ok').addEventListener('click', () => hideMod('mod-meeting-end'));
     d('m-round-input').addEventListener('change', () => { GS.meetRound = Math.max(1, +d('m-round-input').value || 1); d('m-round-input').value = GS.meetRound });
     d('disc-pause').addEventListener('click', () => { if (!GS.meetingActive) { alert('请先开始会议！'); return } if (GS.discRun) { stopDisc(); GS.discPaused = true; d('disc-pause').textContent = '▶ 继续'; pauseMeetingBGM(); if (!GS.muted && !GS.bgmStopped) startBG() } else { GS.discPaused = false; d('disc-pause').textContent = '⏸ 暂停'; GS.discRun = true; GS.discTimer = setInterval(() => { GS.discSec--; renderDisc(); if (GS.discSec <= 0) { stopDisc(); startMeetingOverAlert(); lg('system', '⏰', '讨论时间结束！') } }, 1000); stopBG(); if (!GS.muted && !GS.bgmStopped) startMeetingBGM() } });
@@ -4074,6 +4090,9 @@
       }
 
       // Socket will trigger room-joined after connect
+
+      d('emergency-alert-btn').addEventListener('click', () => { if (GS.emergencyCooldown) { alert('冷却中，暂不可用！'); return; } if (GS.emergencyActive) { stopEmergencyAlert(true); } else { showC1('确定要拉响紧急通报吗？声音将会持续响起！', ok => { if (ok) startEmergencyAlert(); }); } });
+      d('emergency-refresh-btn').addEventListener('click', () => { endEmergencyCooldown(); });
 
       // First interaction unlocks audio
       const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
