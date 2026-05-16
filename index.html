@@ -3083,11 +3083,20 @@
   <div class="am-backdrop" id="am-backdrop"></div>
   <div class="am" id="act-menu">
     <div class="amname" id="am-pname">玩家</div>
-    <button class="ab ta" id="am-add">✅ +1 完成任务</button>
-    <button class="ab ta" id="am-add-2" style="background: linear-gradient(135deg, #A8B860, #8F9E4A);">✅ +2
-      完成任务</button>
-    <button class="ab ta" id="am-add-3" style="background: linear-gradient(135deg, #7FA880, #5C8860);">✅ +3
-      完成任务</button>
+    <div class="sg" style="margin-bottom: 12px; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+      <div class="sc2 clickable" id="am-add" style="padding: 8px 4px;">
+        <div class="sn" style="font-size: 1.2rem; margin-bottom: 2px;">✅</div>
+        <div class="sl" style="font-size: 0.7rem; font-weight: 700; color: #5A9E6A;">+1 任务</div>
+      </div>
+      <div class="sc2 clickable" id="am-add-2" style="padding: 8px 4px;">
+        <div class="sn" style="font-size: 1.2rem; margin-bottom: 2px;">✅</div>
+        <div class="sl" style="font-size: 0.7rem; font-weight: 700; color: #A8B860;">+2 任务</div>
+      </div>
+      <div class="sc2 clickable" id="am-add-3" style="padding: 8px 4px;">
+        <div class="sn" style="font-size: 1.2rem; margin-bottom: 2px;">✅</div>
+        <div class="sl" style="font-size: 0.7rem; font-weight: 700; color: #7FA880;">+3 任务</div>
+      </div>
+    </div>
     <button class="ab ts" id="am-sub">❌ -1 任务</button>
     <button class="ab el" id="am-elim">💀 往生</button>
     <button class="ab re" id="am-res" style="display:none">✨ 重生</button>
@@ -4092,7 +4101,7 @@
       // Socket will trigger room-joined after connect
 
       d('emergency-alert-btn').addEventListener('click', () => { if (GS.emergencyCooldown) { alert('冷却中，暂不可用！'); return; } if (GS.emergencyActive) { stopEmergencyAlert(true); } else { showC1('确定要拉响紧急通报吗？声音将会持续响起！', ok => { if (ok) startEmergencyAlert(); }); } });
-      d('emergency-refresh-btn').addEventListener('click', () => { endEmergencyCooldown(); });
+      d('emergency-refresh-btn').addEventListener('click', () => { showC1('确定要立即刷新紧急通报冷却吗？', ok => { if (ok) endEmergencyCooldown(); }); });
 
       // First interaction unlocks audio
       const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
