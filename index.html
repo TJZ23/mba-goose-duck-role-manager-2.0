@@ -3414,6 +3414,7 @@
     let currentRoomId = myRoomId;   // 当前所在房间（可能是别人的）
     let isInMyRoom = true;           // 是否在自己的房间
     let _pushDebounce = null;        // 防抖推送
+    let _localSaveDebounce = null;   // 防抖本地保存
     let _pendingPush = null;         // 当 socket 不在线时缓存一次要推的状态
 
     function joinCurrentRoom() {
@@ -3470,7 +3471,10 @@
         }
       }
 
-      if (state) applyRemoteGameState(state);
+      if (state) {
+        applyRemoteGameState(state);
+        scheduleLocalSave(roomId);
+      }
     });
 
     // 他人修改后推来的状态更新
@@ -3478,6 +3482,7 @@
       if (!gameState) return;
       console.log('[sync] state-update received', { partial });
       applyRemoteGameState(gameState);
+      scheduleLocalSave(currentRoomId);
       showSaveBadge('云端同步');
     });
 
@@ -3623,7 +3628,14 @@
       }, 400);
     }
 
-    function onStateChanged() { pushState(false); }
+    function scheduleLocalSave(roomId) {
+      if (_localSaveDebounce) clearTimeout(_localSaveDebounce);
+      _localSaveDebounce = setTimeout(() => {
+        if (roomId) saveGameToLocalStorage(roomId);
+      }, 500);
+    }
+
+    function onStateChanged() { pushState(false); scheduleLocalSave(currentRoomId); }
 
     // ═══════════════════════════════════════════════════════════
     // ROOM MANAGEMENT + GAME SAVE/RESTORE
@@ -4474,6 +4486,12 @@
       notifDropdown?.addEventListener('click', (e) => e.stopPropagation());
       document.addEventListener('click', () => { notifDropdown?.classList.remove('open'); });
       renderNotifications();
+
+      window.addEventListener('beforeunload', () => {
+        if (hasGameContent() && currentRoomId) {
+          saveGameToLocalStorage(currentRoomId);
+        }
+      });
 
       lg('system', '🏮', `控制台启动 · 我的房间号：${myRoomId}`);
     });
