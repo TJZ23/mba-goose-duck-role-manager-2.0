@@ -333,6 +333,77 @@
       background: #5A9E6A
     }
 
+    .notif-dropdown {
+      position: relative;
+    }
+
+    .notif-panel {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      width: 280px;
+      min-width: 240px;
+      max-width: 320px;
+      background: rgba(255, 255, 255, .98);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--slM);
+      padding: 10px;
+      display: none;
+      z-index: 500;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .notif-dropdown.open .notif-panel {
+      display: block;
+    }
+
+    .notif-item {
+      font-size: .78rem;
+      line-height: 1.4;
+      color: var(--tp);
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(196, 150, 58, .08);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .notif-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .notif-empty {
+      font-size: .78rem;
+      color: var(--ts);
+      padding: 10px 4px;
+      text-align: center;
+    }
+
+    .recommend-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 66, 66, .16);
+      color: var(--err);
+      font-size: .88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .2s, background .2s;
+    }
+
+    .recommend-btn:hover {
+      transform: scale(1.08);
+      background: rgba(255, 66, 66, .24);
+    }
+
     .save-dot.saving {
       background: var(--gold);
       animation: pulse-dot .8s infinite
@@ -2698,6 +2769,10 @@
       <div class="save-badge" id="save-badge">
         <div class="save-dot" id="save-dot"></div><span id="save-label">云端已保存</span>
       </div>
+      <div class="notif-dropdown" id="notif-dropdown">
+        <button class="btn bp sm" id="notif-toggle">🔔 <span id="notif-count">0</span></button>
+        <div class="notif-panel" id="notif-panel"></div>
+      </div>
     </div>
   </div>
 
@@ -3339,6 +3414,7 @@
     let currentRoomId = myRoomId;   // 当前所在房间（可能是别人的）
     let isInMyRoom = true;           // 是否在自己的房间
     let _pushDebounce = null;        // 防抖推送
+    let _pendingPush = null;         // 当 socket 不在线时缓存一次要推的状态
 
     function joinCurrentRoom() {
       if (!currentRoomId) return;
@@ -3351,6 +3427,14 @@
       setSyncStatus('online', '已连接');
       // 重连后重新加入房间
       joinCurrentRoom();
+      // 如果此前有未发送的推送（刷新/断线期间产生）则补发
+      if (_pendingPush) {
+        try {
+          socket.emit('push-state', { roomId: currentRoomId, gameState: _pendingPush, partial: false });
+          showSaveBadge('云端已保存');
+        } catch (e) { }
+        _pendingPush = null;
+      }
     });
     socket.on('disconnect', () => {
       setSyncStatus('offline', '连接断开');
@@ -3360,6 +3444,7 @@
 
     // 加入房间成功 → 服务器推来已有状态
     socket.on('room-joined', ({ roomId, state, online }) => {
+      console.log('[sync] room-joined', { roomId, hasState: !!state, online });
       currentRoomId = roomId;
       isInMyRoom = (roomId === myRoomId);
       d('room-id-display').textContent = roomId;
@@ -3391,6 +3476,7 @@
     // 他人修改后推来的状态更新
     socket.on('state-update', ({ gameState, partial }) => {
       if (!gameState) return;
+      console.log('[sync] state-update received', { partial });
       applyRemoteGameState(gameState);
       showSaveBadge('云端同步');
     });
@@ -3526,8 +3612,14 @@
       showSaveBadge('保存中…', true);
       _pushDebounce = setTimeout(() => {
         const gs = exportGameState();
-        socket.emit('push-state', { roomId: currentRoomId, gameState: gs, partial });
-        showSaveBadge('云端已保存');
+        if (socket && socket.connected) {
+          socket.emit('push-state', { roomId: currentRoomId, gameState: gs, partial });
+          showSaveBadge('云端已保存');
+        } else {
+          // 如果当前未连接到服务器，缓存一次推送，等重连后补发
+          _pendingPush = gs;
+          showSaveBadge('离线，等待连接');
+        }
       }, 400);
     }
 
@@ -3741,6 +3833,7 @@
         logHTML: d('ev-log').innerHTML,
         pigReveal: GS.pigReveal, dodoReveal: GS.dodoReveal,
         rolesVis: GS.rolesVis,
+        notifications: GS.notifications || [],
         emergencyCooldownRemain: GS.emergencyCooldownRemain || 0,
         sabCooldownRemain: GS.sabCooldownRemain || 0,
       };
@@ -3817,6 +3910,8 @@
         if (gs.dodoReveal !== undefined) { GS.dodoReveal = gs.dodoReveal; d('sl-dodo').textContent = gs.dodoReveal ? '痴迷鸽 🦤' : '秘密 🔒'; }
         if (gs.rolesVis !== undefined) { if (gs.rolesVis !== GS.rolesVis) { gs.rolesVis ? showAllRoles() : hideAllRoles(); } }
         if (gs.logHTML) d('ev-log').innerHTML = gs.logHTML;
+        GS.notifications = gs.notifications || [];
+        renderNotifications();
         
         if (gs.sabCooldownRemain !== undefined) {
           if (gs.sabCooldownRemain > 0) {
@@ -3883,6 +3978,7 @@
       meetingOverAlert: false, meetingOverAlertIv: null,
       sabPunishKillList: [],
       emergencyTimer: null, emergencySoundIv: null, emergencyActive: false, emergencyCooldown: false, emergencyCooldownRemain: 0,
+      notifications: [],
       sabCooldownTimer: null, sabCooldownActive: false, sabCooldownRemain: 0
     };
 
@@ -4005,6 +4101,34 @@
       });
     }
 
+    function renderNotifications() {
+      const badge = d('notif-count'); if (badge) badge.textContent = (GS.notifications || []).length;
+      const panel = d('notif-panel'); if (!panel) return;
+      const list = GS.notifications || [];
+      if (!list.length) {
+        panel.innerHTML = '<div class="notif-empty">暂无推荐通知</div>';
+        return;
+      }
+      panel.innerHTML = list.map(n => `<div class="notif-item">${escHtml(n.text)}</div>`).join('');
+    }
+
+    function addNotification(text) {
+      GS.notifications = [{ text, ts: Date.now() }, ...(GS.notifications || [])].slice(0, 5);
+      renderNotifications();
+      lg('system', '🔔', text);
+      onStateChanged();
+    }
+
+    function recommendPlayerDeath(playerId) {
+      const p = GS.players.find(x => x.id === playerId);
+      if (!p) return;
+      if (p.element && p.element.classList.contains('eliminated')) {
+        alert('该修行者已往生，无法推荐死亡。');
+        return;
+      }
+      addNotification(`推荐死亡：${p.name}`);
+    }
+
     function updateSiteSelectOptions() {
       const sel = d('am-site-select'); if (!sel) return;
       sel.innerHTML = '';
@@ -4070,7 +4194,26 @@
     // PLAYERS
     // ═══════════════════════════════════════════════════════════
     function genPlayers(skipPush) { document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; let pid = 1; GS.teams.forEach((team, i) => { const sz = team.count || 0; if (!sz) return; const sec = document.createElement('div'); sec.className = 'card tsec'; sec.innerHTML = `<div class="card-accent"></div><div class="cb"><div class="tthd"><div class="ttitle">${escHtml(team.name)}组</div><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><div class="tmeta">成员 ${sz} 人</div><div class="tmeta">组内任务：<strong id="tt-${i + 1}" style="color:var(--pc)">0</strong></div></div></div><div class="pg" id="tg-${i + 1}"></div></div>`; document.getElementById('teams-container').appendChild(sec); const grid = sec.querySelector(`#tg-${i + 1}`); for (let j = 1; j <= sz; j++) { const card = mkCard(pid, team.name, j, i + 1); grid.appendChild(card); GS.players.push({ id: pid, element: card, name: `${team.name}${j}`, role: '', teamIdx: i + 1, scores: {}, tasks: 0, votes: 0, pkVotes: 0 }); pid++ } }); ensurePlayerSiteScores(); updStats(); refCands(); refPickers(); if (!skipPush) { lg('system', '🏮', `队伍更新，共 ${GS.players.length} 名修行者`); onStateChanged() } }
-    function mkCard(id, team, num, ti) { const c = document.createElement('div'); c.className = 'pc2'; c.dataset.id = id; c.dataset.role = ''; c.dataset.ti = ti; c.innerHTML = `<span class="sdot alive"></span><div class="pname">${escHtml(team)}${num}</div><div class="prole"></div><div class="ptask">✅ <span class="tc">0</span></div>`; c.addEventListener('click', () => openMenu(c)); return c }
+    function mkCard(id, team, num, ti) {
+      const c = document.createElement('div');
+      c.className = 'pc2';
+      c.dataset.id = id;
+      c.dataset.role = '';
+      c.dataset.ti = ti;
+      c.innerHTML = `<span class="sdot alive"></span><div class="pname">${escHtml(team)}${num}</div><div class="prole"></div><div class="ptask">✅ <span class="tc">0</span></div>`;
+      const recBtn = document.createElement('button');
+      recBtn.type = 'button';
+      recBtn.className = 'recommend-btn';
+      recBtn.title = '推荐死亡';
+      recBtn.textContent = '☠️';
+      recBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        recommendPlayerDeath(id);
+      });
+      c.appendChild(recBtn);
+      c.addEventListener('click', () => openMenu(c));
+      return c;
+    }
 
     // ACTION MENU
     const menuEl = d('act-menu'), bdEl = d('am-backdrop');
@@ -4320,6 +4463,17 @@
       // First interaction unlocks audio
       const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
       document.body.addEventListener('click', once);
+
+      const notifToggle = d('notif-toggle');
+      const notifDropdown = d('notif-dropdown');
+      notifToggle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notifDropdown?.classList.toggle('open');
+        renderNotifications();
+      });
+      notifDropdown?.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', () => { notifDropdown?.classList.remove('open'); });
+      renderNotifications();
 
       lg('system', '🏮', `控制台启动 · 我的房间号：${myRoomId}`);
     });
