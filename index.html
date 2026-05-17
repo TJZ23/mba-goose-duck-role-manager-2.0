@@ -3478,6 +3478,12 @@
         }
         d('meeting-banner').style.display = 'none';
         setVotingLocked(true);
+      } else if (action.type === 'cooldown-sabotage') {
+        if (action.active) startSabotageCooldown(action.sec, true);
+        else endSabotageCooldown(true);
+      } else if (action.type === 'cooldown-emergency') {
+        if (action.active) startEmergencyCooldown(action.sec, true);
+        else endEmergencyCooldown(true);
       }
     });
 
@@ -3708,6 +3714,8 @@
         logHTML: d('ev-log').innerHTML,
         pigReveal: GS.pigReveal, dodoReveal: GS.dodoReveal,
         rolesVis: GS.rolesVis,
+        emergencyCooldownRemain: GS.emergencyCooldownRemain || 0,
+        sabCooldownRemain: GS.sabCooldownRemain || 0,
       };
     }
 
@@ -3769,6 +3777,31 @@
         if (gs.dodoReveal !== undefined) { GS.dodoReveal = gs.dodoReveal; d('sl-dodo').textContent = gs.dodoReveal ? '痴迷鸽 🦤' : '秘密 🔒'; }
         if (gs.rolesVis !== undefined) { if (gs.rolesVis !== GS.rolesVis) { gs.rolesVis ? showAllRoles() : hideAllRoles(); } }
         if (gs.logHTML) d('ev-log').innerHTML = gs.logHTML;
+        
+        if (gs.sabCooldownRemain !== undefined) {
+          if (gs.sabCooldownRemain > 0) {
+            if (!GS.sabCooldownActive) {
+               startSabotageCooldown(gs.sabCooldownRemain, true);
+            } else if (Math.abs((GS.sabCooldownRemain || 0) - gs.sabCooldownRemain) > 5) {
+               GS.sabCooldownRemain = gs.sabCooldownRemain;
+            }
+          } else {
+            if (GS.sabCooldownActive) endSabotageCooldown(true);
+          }
+        }
+        
+        if (gs.emergencyCooldownRemain !== undefined) {
+          if (gs.emergencyCooldownRemain > 0) {
+            if (!GS.emergencyCooldown) {
+               startEmergencyCooldown(gs.emergencyCooldownRemain, true);
+            } else if (Math.abs((GS.emergencyCooldownRemain || 0) - gs.emergencyCooldownRemain) > 5) {
+               GS.emergencyCooldownRemain = gs.emergencyCooldownRemain;
+            }
+          } else {
+            if (GS.emergencyCooldown) endEmergencyCooldown(true);
+          }
+        }
+
         // Sync meeting UI buttons
         if (gs.meetingActive) { d('new-meeting').style.display = 'none'; d('end-meeting').style.display = 'inline-flex'; }
         else { d('new-meeting').style.display = ''; d('end-meeting').style.display = 'none'; }
@@ -3804,8 +3837,8 @@
       meetingBGMRunning: false,
       meetingOverAlert: false, meetingOverAlertIv: null,
       sabPunishKillList: [],
-      emergencyTimer: null, emergencySoundIv: null, emergencyActive: false, emergencyCooldown: false,
-      sabCooldownTimer: null, sabCooldownActive: false
+      emergencyTimer: null, emergencySoundIv: null, emergencyActive: false, emergencyCooldown: false, emergencyCooldownRemain: 0,
+      sabCooldownTimer: null, sabCooldownActive: false, sabCooldownRemain: 0
     };
 
     function d(id) { return document.getElementById(id) }
@@ -3836,10 +3869,10 @@
     function stopMeetingOverAlert() { GS.meetingOverAlert = false; if (GS.meetingOverAlertIv) { clearInterval(GS.meetingOverAlertIv); GS.meetingOverAlertIv = null } }
     function startEmergencyAlert() { if (GS.emergencySoundIv) return; GS.emergencyActive = true; d('emergency-alert-btn').innerHTML = '🔕 停止紧急通报'; d('emergency-alert-btn').classList.remove('bd'); d('emergency-alert-btn').classList.add('bs'); const alarm = () => { if (GS.muted) return; tone(800, .4, 'sawtooth', .7); setTimeout(() => { if (!GS.muted) tone(600, .4, 'sawtooth', .7) }, 400) }; alarm(); GS.emergencySoundIv = setInterval(alarm, 800) }
     function stopEmergencyAlert(triggerCooldown = true) { if (GS.emergencySoundIv) { clearInterval(GS.emergencySoundIv); GS.emergencySoundIv = null } GS.emergencyActive = false; d('emergency-alert-btn').innerHTML = '🚨 紧急通报'; d('emergency-alert-btn').classList.remove('bs'); d('emergency-alert-btn').classList.add('bd'); if (triggerCooldown) startEmergencyCooldown(300) }
-    function startEmergencyCooldown(sec) { if (GS.emergencyTimer) clearInterval(GS.emergencyTimer); GS.emergencyCooldown = true; let remain = sec; d('emergency-alert-btn').style.display = 'none'; d('emergency-cd-text').style.display = 'inline-block'; d('emergency-refresh-btn').style.display = 'inline-block'; const tick = () => { if (remain <= 0) { endEmergencyCooldown(); return } const m = Math.floor(remain / 60); const s = remain % 60; d('emergency-cd-text').textContent = `⏱️ ${m}:${s.toString().padStart(2, '0')} 冷却中`; remain-- }; tick(); GS.emergencyTimer = setInterval(tick, 1000) }
-    function endEmergencyCooldown() { if (GS.emergencyTimer) { clearInterval(GS.emergencyTimer); GS.emergencyTimer = null } GS.emergencyCooldown = false; d('emergency-cd-text').style.display = 'none'; d('emergency-refresh-btn').style.display = 'none'; d('emergency-alert-btn').style.display = 'inline-flex' }
-    function startSabotageCooldown(sec) { if (GS.sabCooldownTimer) clearInterval(GS.sabCooldownTimer); GS.sabCooldownActive = true; let remain = sec; d('trig-sab').style.display = 'none'; d('trig-sab-cd-text').style.display = 'inline-block'; d('trig-sab-refresh-btn').style.display = 'inline-block'; const tick = () => { if (remain <= 0) { endSabotageCooldown(); return } const m = Math.floor(remain / 60); const s = remain % 60; d('trig-sab-cd-text').textContent = `⏱️ 冷却中（${m}:${s.toString().padStart(2, '0')}）`; remain-- }; tick(); GS.sabCooldownTimer = setInterval(tick, 1000) }
-    function endSabotageCooldown() { if (GS.sabCooldownTimer) { clearInterval(GS.sabCooldownTimer); GS.sabCooldownTimer = null } GS.sabCooldownActive = false; d('trig-sab-cd-text').style.display = 'none'; d('trig-sab-refresh-btn').style.display = 'none'; d('trig-sab').style.display = 'inline-block' }
+    function startEmergencyCooldown(sec, isSync = false) { if (GS.emergencyTimer) clearInterval(GS.emergencyTimer); GS.emergencyCooldown = true; GS.emergencyCooldownRemain = sec; d('emergency-alert-btn').style.display = 'none'; d('emergency-cd-text').style.display = 'inline-block'; d('emergency-refresh-btn').style.display = 'inline-block'; const tick = () => { if (GS.emergencyCooldownRemain <= 0) { endEmergencyCooldown(); return } const m = Math.floor(GS.emergencyCooldownRemain / 60); const s = GS.emergencyCooldownRemain % 60; d('emergency-cd-text').textContent = `⏱️ ${m}:${s.toString().padStart(2, '0')} 冷却中`; GS.emergencyCooldownRemain-- }; tick(); GS.emergencyTimer = setInterval(tick, 1000); if (!isSync) { socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'cooldown-emergency', sec: sec, active: true } }); onStateChanged(); } }
+    function endEmergencyCooldown(isSync = false) { if (GS.emergencyTimer) { clearInterval(GS.emergencyTimer); GS.emergencyTimer = null } GS.emergencyCooldown = false; GS.emergencyCooldownRemain = 0; d('emergency-cd-text').style.display = 'none'; d('emergency-refresh-btn').style.display = 'none'; d('emergency-alert-btn').style.display = 'inline-flex'; if (!isSync) { socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'cooldown-emergency', active: false } }); onStateChanged(); } }
+    function startSabotageCooldown(sec, isSync = false) { if (GS.sabCooldownTimer) clearInterval(GS.sabCooldownTimer); GS.sabCooldownActive = true; GS.sabCooldownRemain = sec; d('trig-sab').style.display = 'none'; d('trig-sab-cd-text').style.display = 'inline-block'; d('trig-sab-refresh-btn').style.display = 'inline-block'; const tick = () => { if (GS.sabCooldownRemain <= 0) { endSabotageCooldown(); return } const m = Math.floor(GS.sabCooldownRemain / 60); const s = GS.sabCooldownRemain % 60; d('trig-sab-cd-text').textContent = `⏱️ 冷却中（${m}:${s.toString().padStart(2, '0')}）`; GS.sabCooldownRemain-- }; tick(); GS.sabCooldownTimer = setInterval(tick, 1000); if (!isSync) { socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'cooldown-sabotage', sec: sec, active: true } }); onStateChanged(); } }
+    function endSabotageCooldown(isSync = false) { if (GS.sabCooldownTimer) { clearInterval(GS.sabCooldownTimer); GS.sabCooldownTimer = null } GS.sabCooldownActive = false; GS.sabCooldownRemain = 0; d('trig-sab-cd-text').style.display = 'none'; d('trig-sab-refresh-btn').style.display = 'none'; d('trig-sab').style.display = 'inline-block'; if (!isSync) { socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'cooldown-sabotage', active: false } }); onStateChanged(); } }
 
     // BGM
     const SC = { penta: [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 784, 880], minorP: [220, 261.63, 311.13, 349.23, 392, 440, 523.25, 622.25, 698.46, 784], chinese: [261.63, 293.66, 349.23, 392, 466.16, 523.25, 587.33, 698.46, 784, 932.33], dorian: [261.63, 293.66, 311.13, 349.23, 392, 440, 466.16, 523.25, 587.33, 622.25], major: [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25, 587.33, 659.25], mixolyd: [261.63, 293.66, 329.63, 349.23, 392, 440, 466.16, 523.25, 587.33, 659.25], wholeTone: [261.63, 293.66, 329.63, 369.99, 415.30, 466.16, 523.25, 587.33, 659.25, 739.99], arabian: [261.63, 277.18, 329.63, 349.23, 392, 415.30, 493.88, 523.25, 587.33, 622.25] };
@@ -3994,7 +4027,7 @@
     d('new-game-btn').addEventListener('click', () => showMod('mod-newgame'));
     d('ng-cancel').addEventListener('click', () => hideMod('mod-newgame'));
     d('ng-confirm1').addEventListener('click', () => { hideMod('mod-newgame'); doNewGame() });
-    function doNewGame() { if (GS.sabTimer) { clearInterval(GS.sabTimer); GS.sabTimer = null } stopSabAlert(); d('sab-banner').classList.remove('active'); d('meeting-banner').style.display = 'none'; stopDisc(); stopMeetingOverAlert(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false; d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); stopBG(); GS.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); buildTeamConfigUI();['cnt-goose', 'cnt-det', 'cnt-sher', 'cnt-duck', 'cnt-pig', 'cnt-dodo'].forEach(id => { const el = d(id); if (el) el.value = 0 }); document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; GS.meetRound = 1; GS.sabSuccessCount = 0; GS.rolesVis = false; GS.pigReveal = false; GS.dodoReveal = false; GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first'; GS.taskTarget = 80; GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; GS.sabPunishKillList = []; d('m-round-input').value = 1; d('tgt-input').value = 80; si('tgt-label', 80); si('wc-task', 80); d('sl-pig').textContent = '秘密 🔒'; d('sl-dodo').textContent = '秘密 🔒'; d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show'); d('ev-log').innerHTML = ''; GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); updStats(); updTT(); refCands(); refPickers(); d('step2-btn').disabled = true; d('step3-btn').disabled = true; goToStep(1); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300); onStateChanged(); lg('system', '🌅', '新游戏开始！所有进度已清空。') }
+    function doNewGame() { if (GS.sabTimer) { clearInterval(GS.sabTimer); GS.sabTimer = null } stopSabAlert(); d('sab-banner').classList.remove('active'); d('meeting-banner').style.display = 'none'; stopDisc(); stopMeetingOverAlert(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false; d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); stopBG(); GS.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); buildTeamConfigUI();['cnt-goose', 'cnt-det', 'cnt-sher', 'cnt-duck', 'cnt-pig', 'cnt-dodo'].forEach(id => { const el = d(id); if (el) el.value = 0 }); document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; GS.meetRound = 1; GS.sabSuccessCount = 0; GS.rolesVis = false; GS.pigReveal = false; GS.dodoReveal = false; GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first'; GS.taskTarget = 80; GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; GS.sabPunishKillList = []; endSabotageCooldown(true); endEmergencyCooldown(true); d('m-round-input').value = 1; d('tgt-input').value = 80; si('tgt-label', 80); si('wc-task', 80); d('sl-pig').textContent = '秘密 🔒'; d('sl-dodo').textContent = '秘密 🔒'; d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show'); d('ev-log').innerHTML = ''; GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); updStats(); updTT(); refCands(); refPickers(); d('step2-btn').disabled = true; d('step3-btn').disabled = true; goToStep(1); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300); onStateChanged(); lg('system', '🌅', '新游戏开始！所有进度已清空。') }
 
     // END GAME
     d('end-game-btn').addEventListener('click', () => showMod('mod-eg-confirm'));
