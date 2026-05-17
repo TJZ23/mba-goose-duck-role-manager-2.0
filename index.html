@@ -4282,35 +4282,4 @@
       initZeroClearInputs();
 
       // URL 参数读取：支持直接通过链接加入别人房间
-      const urlParams = new URLSearchParams(window.location.search);
-      const startRoomId = urlParams.get('room');
-
-      if (startRoomId && /^\d{6}$/.test(startRoomId)) {
-        // URL 带有房间号，直接加入该房间
-        currentRoomId = startRoomId;
-        isInMyRoom = (startRoomId === myRoomId);
-        saveRoomHistory(startRoomId);
-        // 清除地址栏参数，保持干净
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else {
-        // Start in own room
-        currentRoomId = myRoomId;
-        isInMyRoom = true;
-      }
-
-      // Socket will trigger room-joined after connect
-
-      d('emergency-alert-btn').addEventListener('click', () => { if (GS.emergencyCooldown) { alert('冷却中，暂不可用！'); return; } if (GS.emergencyActive) { stopEmergencyAlert(true); } else { showC1('确定要拉响紧急通报吗？声音将会持续响起！', ok => { if (ok) startEmergencyAlert(); }); } });
-      d('emergency-refresh-btn').addEventListener('click', () => { showC1('确定要立即刷新紧急通报冷却吗？', ok => { if (ok) endEmergencyCooldown(); }); });
-      d('trig-sab-refresh-btn').addEventListener('click', () => { showC1('确定要立即刷新触发破坏冷却吗？', ok => { if (ok) endSabotageCooldown(); }); });
-
-      // First interaction unlocks audio
-      const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
-      document.body.addEventListener('click', once);
-
-      lg('system', '🏮', `控制台启动 · 我的房间号：${myRoomId}`);
-    });
-  </script>
-</body>
-
-</html>
+      const urlParams = new URLSearc
