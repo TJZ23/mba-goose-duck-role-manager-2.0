@@ -2768,11 +2768,11 @@
         <button class="tbtn active" data-tab="dash">📊 总览</button>
         <button class="tbtn" data-tab="setup">⚙️ 游戏配置</button>
         <button class="tbtn" data-tab="players">🏮 修行者</button>
+        <button class="tbtn" data-tab="stations">📍 站点</button>
         <button class="tbtn" data-tab="meeting">🏛️ 大本营</button>
         <button class="tbtn" data-tab="sab">🦆 破坏</button>
         <button class="tbtn" data-tab="music">🎵 音乐</button>
         <button class="tbtn" data-tab="log">📋 日志</button>
-        <button class="tbtn" data-tab="stations">📍 站点</button>
       </div>
 
       <!-- DASHBOARD -->
@@ -3152,22 +3152,6 @@
   <div class="am" id="act-menu">
     <div class="amname" id="am-pname">玩家</div>
     
-    <!-- 特定站点任务加减分 -->
-    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
-      <span style="font-size: 0.8rem; font-weight: bold; color: var(--ts); flex-shrink: 0;">加/减步长：</span>
-      <select id="am-task-points" style="flex: 1; padding: 4px 8px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: bold; background: rgba(255,255,255,0.9); color: var(--tp); text-align: center; font-size: 0.8rem; height: 28px; outline: none;">
-        <option value="1">1 分</option>
-        <option value="2">2 分</option>
-        <option value="3">3 分</option>
-        <option value="4">4 分</option>
-        <option value="5">5 分</option>
-        <option value="6">6 分</option>
-        <option value="7">7 分</option>
-        <option value="8">8 分</option>
-        <option value="9">9 分</option>
-        <option value="10">10 分</option>
-      </select>
-    </div>
     <div style="font-size: 0.8rem; font-weight: bold; color: var(--ts); margin-bottom: 6px; text-align: left; padding-left: 4px;">📍 站点任务调整：</div>
     <div id="am-stations-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; border: 1.5px solid var(--border); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.5);">
       <!-- 动态填充 -->
@@ -3206,22 +3190,26 @@
     </div>
   </div>
   <div class="mo" id="mod-newgame">
-    <div class="mod">
+    <div class="mod" style="max-width: 440px; width: 95%;">
       <div class="mtitle">🌅 游戏重置与备份</div>
-      <div class="mcont">
+      <div class="mcont" style="margin-bottom: 12px;">
         <div class="newgame-warning" style="margin-bottom: 10px;"><strong>⚠️ 开始新游戏将重置所有数据：</strong>队伍配置 · 角色数量 · 玩家状态 · 任务进度 · 往生状态 · 会议轮次 · 事件日志。</div>
-        <p style="font-size: 0.8rem; margin-bottom: 8px; color: var(--ts);">您可以选择备份当前进度以备后用。若要继续之前的游戏，可以直接恢复备份。</p>
-        <div id="backup-status-text" style="font-size: 0.76rem; color: var(--suc); font-weight: bold; display: none; margin-bottom: 8px;"></div>
+        <p style="font-size: 0.8rem; margin-bottom: 8px; color: var(--ts);">您可以选择备份当前进度以备后用。</p>
+        
+        <!-- 多个备份管理区 -->
+        <div class="backups-section" style="margin-top: 12px; border-top: 1.5px dashed var(--border); padding-top: 12px;">
+          <div style="font-size: 0.82rem; font-weight: bold; color: var(--tp); margin-bottom: 8px; text-align: left; display: flex; align-items: center; gap: 4px;">📦 历史游戏备份名录：</div>
+          <div id="backups-list-container" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.4); border: 1.5px solid var(--border); border-radius: 12px; padding: 8px;">
+            <!-- 动态生成备份列表 -->
+          </div>
+        </div>
       </div>
       <div class="mact" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
         <div style="display: flex; gap: 8px; width: 100%;">
           <button class="btn bo" id="ng-cancel" style="flex: 1;">取消</button>
           <button class="btn bd" id="ng-confirm1" style="flex: 1; font-size: 0.8rem;">🌅 直接新游戏</button>
         </div>
-        <div style="display: flex; gap: 8px; width: 100%;">
-          <button class="btn bw" id="ng-backup-reset" style="flex: 1; font-size: 0.8rem;">💾 备份并开始</button>
-          <button class="btn bsc" id="ng-restore-backup" style="flex: 1; font-size: 0.8rem;">🔄 恢复备份游戏</button>
-        </div>
+        <button class="btn bw" id="ng-backup-reset" style="width: 100%; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px;">💾 备份当前并开启新游戏</button>
       </div>
     </div>
   </div>
@@ -4050,7 +4038,8 @@
       sabCooldownTimer: null, sabCooldownActive: false, sabCooldownRemain: 0, sabCooldownEndTime: 0,
       lastOnlineCount: 0,
       stations: ['藏经阁', '大雄宝殿', '修行场'],
-      notifications: []
+      notifications: [],
+      menuScoreChanged: false
     };
 
     function d(id) { return document.getElementById(id) }
@@ -4256,6 +4245,7 @@
     function openMenu(card) {
       if (GS.manualMode) { GS.curCard = card; showMod('mod-role'); return }
       GS.curCard = card;
+      GS.menuScoreChanged = false;
       const p = gp(card);
       d('am-pname').textContent = p ? p.name : '';
       const dead = card.classList.contains('eliminated');
@@ -4273,9 +4263,22 @@
       bdEl.classList.add('open');
       menuEl.classList.add('open');
     }
-    function closeMenu() { menuEl.classList.remove('open'); bdEl.classList.remove('open') }
-    bdEl.addEventListener('click', closeMenu);
-    d('am-close').addEventListener('click', closeMenu);
+    function closeMenu(force = false) {
+      if (force !== true && GS.menuScoreChanged) {
+        showC1('检测到分数有变更，确定要关闭此菜单吗？', ok => {
+          if (ok) {
+            GS.menuScoreChanged = false;
+            closeMenu(true);
+          }
+        });
+        return;
+      }
+      GS.menuScoreChanged = false;
+      menuEl.classList.remove('open');
+      bdEl.classList.remove('open');
+    }
+    bdEl.addEventListener('click', () => closeMenu(false));
+    d('am-close').addEventListener('click', () => closeMenu(false));
 
     function renderActionMenuStations() {
       const c = GS.curCard;
@@ -4310,7 +4313,7 @@
       if (!c) return;
       const p = gp(c);
       if (!p) return;
-      let pts = parseInt(d('am-task-points').value) || 1;
+      let pts = 1;
       const isDead = c.classList.contains('eliminated');
       
       if (dir > 0) {
@@ -4328,37 +4331,41 @@
         sfxTask(); updStats(); updTT();
         
         if (isDead) {
-          lg('task', '✅', `[往生者] ${p.name} 在 ${stationName} 完成任务（强制+1分，原选${d('am-task-points').value}分）· 全场${GS.totalTasks}`);
+          lg('task', '✅', `[往生者] ${p.name} 在 ${stationName} 完成任务（强制+1分）· 全场${GS.totalTasks}`);
         } else {
           lg('task', '✅', `${p.name} 在 ${stationName} 完成任务 +${pts}（共${p.stationTasks[stationName]}分）· 全场${GS.totalTasks}`);
         }
+        GS.menuScoreChanged = true;
       } else {
         if (!p.stationTasks) p.stationTasks = {};
         const score = p.stationTasks[stationName] || 0;
         const s = Math.min(score, pts);
-        p.stationTasks[stationName] = score - s;
-        
-        const calculatedTasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
-        const diff = p.tasks - calculatedTasks;
-        p.tasks = calculatedTasks;
-        c.querySelector('.tc').textContent = p.tasks;
-        GS.totalTasks = Math.max(0, GS.totalTasks - diff);
-        sfxDeduct(); updStats(); updTT();
-        lg('deduct', '❌', `${p.name} 在 ${stationName} 任务-${s}（剩${p.stationTasks[stationName]}分）`);
+        if (s > 0) {
+          p.stationTasks[stationName] = score - s;
+          
+          const calculatedTasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
+          const diff = p.tasks - calculatedTasks;
+          p.tasks = calculatedTasks;
+          c.querySelector('.tc').textContent = p.tasks;
+          GS.totalTasks = Math.max(0, GS.totalTasks - diff);
+          sfxDeduct(); updStats(); updTT();
+          lg('deduct', '❌', `${p.name} 在 ${stationName} 任务-${s}（剩${p.stationTasks[stationName]}分）`);
+          GS.menuScoreChanged = true;
+        }
       }
       onStateChanged();
       renderActionMenuStations();
       renderStationMatrix();
     }
 
-    d('am-elim').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者往生吗？', ok => { if (!ok) return; elimP(c); updStats(); refCands(); refPickers(); onStateChanged(); renderStationMatrix(); }) });
-    d('am-res').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者重生吗？', ok => { if (!ok) return; resP(c); updStats(); refCands(); refPickers(); onStateChanged(); renderStationMatrix(); }) });
+    d('am-elim').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(true); showC1('确定要让此修行者往生吗？', ok => { if (!ok) return; elimP(c); updStats(); refCands(); refPickers(); onStateChanged(); renderStationMatrix(); }) });
+    d('am-res').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(true); showC1('确定要让此修行者重生吗？', ok => { if (!ok) return; resP(c); updStats(); refCands(); refPickers(); onStateChanged(); renderStationMatrix(); }) });
     d('am-recommend-death').addEventListener('click', () => {
       const c = GS.curCard;
       if (!c) return;
       const p = gp(c);
       if (!p) return;
-      closeMenu();
+      closeMenu(true);
       showC1(`确定推荐修行者 [${p.name}] 往生吗？推荐将送达所有联机终端。`, ok => {
         if (!ok) return;
         lg('system', '💀', `推荐往生：玩家 ${p.name}`);
@@ -4366,7 +4373,7 @@
         socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'recommend-death', playerName: p.name, pId: p.id, fromRoom: currentRoomId } });
       });
     });
-    d('am-role').addEventListener('click', () => { showMod('mod-role'); closeMenu() });
+    d('am-role').addEventListener('click', () => { showMod('mod-role'); closeMenu(true) });
 
     // PLAYER STATUS
     function elimP(c, silent) { const p = gp(c); c.classList.add('eliminated'); c.classList.remove('resurrected'); c.querySelector('.sdot').className = 'sdot dead'; c.querySelector('.prole').classList.remove('vis'); if (!silent) { sfxDead(); if (p) lg('eliminate', '💀', `${p.name} 往生！`) } }
@@ -4616,7 +4623,7 @@
         const row = document.createElement('tr');
         row.style.cssText = idx % 2 === 0 ? 'background: rgba(255,255,255,0.1); border-bottom: 1px solid var(--border);' : 'background: rgba(196,150,58,0.02); border-bottom: 1px solid var(--border);';
         
-        const deadClass = p.element.classList.contains('eliminated') ? 'text-decoration: line-through; opacity: 0.5; color: var(--erc);' : '';
+        const deadClass = p.element.classList.contains('eliminated') ? 'opacity: 0.65; color: var(--erc);' : '';
         let rowHtml = `<td style="padding: 8px 10px; text-align: left; font-weight: bold; ${deadClass}">${escHtml(p.name)}</td>`;
         
         GS.stations.forEach(sName => {
@@ -4640,60 +4647,102 @@
     d('show-neutral').addEventListener('click', () => { document.querySelectorAll('.nr').forEach(e => e.style.display = 'flex'); d('show-neutral').style.display = 'none'; d('hide-neutral').style.display = 'inline-flex' });
     d('hide-neutral').addEventListener('click', () => { document.querySelectorAll('.nr').forEach(e => e.style.display = 'none'); d('show-neutral').style.display = 'inline-flex'; d('hide-neutral').style.display = 'none' });
 
-    // NEW GAME
-    d('new-game-btn').addEventListener('click', () => {
-      // Show backup status when opening newgame modal
-      const bk = localStorage.getItem('gduck_backup_' + currentRoomId);
-      const statusEl = d('backup-status-text');
-      const restoreBtn = d('ng-restore-backup');
-      if (bk) {
-        try {
-          const bkData = JSON.parse(bk);
-          const ts = bkData._backupTime ? new Date(bkData._backupTime).toLocaleString('zh-CN') : '未知时间';
-          const pCount = bkData.players ? bkData.players.length : '?';
-          const tasks = bkData.totalTasks !== undefined ? bkData.totalTasks : '?';
-          statusEl.textContent = `📦 已有备份：${ts} · ${pCount}人 · 全场${tasks}任务`;
-          statusEl.style.display = 'block';
-          restoreBtn.disabled = false;
-          restoreBtn.style.opacity = '1';
-        } catch(e) {
-          statusEl.style.display = 'none';
-          restoreBtn.disabled = true;
-          restoreBtn.style.opacity = '0.45';
-        }
-      } else {
-        statusEl.style.display = 'none';
-        restoreBtn.disabled = true;
-        restoreBtn.style.opacity = '0.45';
+    // NEW GAME BACKUPS MANAGEMENT
+    function getBackupsList() {
+      const data = localStorage.getItem('gduck_backups_list_' + currentRoomId);
+      if (!data) return [];
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        return [];
       }
+    }
+
+    function saveBackupsList(list) {
+      localStorage.setItem('gduck_backups_list_' + currentRoomId, JSON.stringify(list));
+    }
+
+    function renderBackupsList() {
+      const container = d('backups-list-container');
+      if (!container) return;
+      container.innerHTML = '';
+      const backups = getBackupsList();
+      if (backups.length === 0) {
+        container.innerHTML = '<div style="color: var(--ts); text-align: center; font-size: 0.8rem; padding: 15px 0;">暂无任何历史备份</div>';
+        return;
+      }
+      backups.slice().reverse().forEach(bk => {
+        const item = document.createElement('div');
+        item.style.cssText = 'display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border); background: rgba(255,255,255,0.7); font-size: 0.78rem;';
+        
+        const ts = new Date(bk.time).toLocaleString('zh-CN');
+        const pCount = bk.state.players ? bk.state.players.length : 0;
+        const tasks = bk.state.totalTasks || 0;
+        const name = bk.name || `未命名备份`;
+
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: var(--tp);">
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">📦 ${escHtml(name)}</span>
+            <span style="font-size: 0.7rem; color: var(--ts); font-weight: normal;">${ts}</span>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--ts); text-align: left; margin-bottom: 2px;">
+            成员: ${pCount}人 · 任务总数: ${tasks}
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <button class="btn bsc sm" style="flex: 1; height: 24px; padding: 0 4px; font-size: 0.72rem; border-radius: 6px;">🔄 恢复</button>
+            <button class="btn bd sm" style="flex: 1; height: 24px; padding: 0 4px; font-size: 0.72rem; background: var(--erc); color: white; border-radius: 6px;">🗑️ 删除</button>
+          </div>
+        `;
+        const buttons = item.querySelectorAll('button');
+        buttons[0].onclick = () => {
+          showC1(`确定要恢复备份 [${name}] 吗？当前游戏进度将被覆盖。`, ok => {
+            if (!ok) return;
+            try {
+              hideMod('mod-newgame');
+              applyRemoteGameState(bk.state);
+              onStateChanged();
+              lg('system', '🔄', `恢复了备份游戏：「${name}」`);
+            } catch(e) {
+              alert('恢复失败：备份数据损坏。');
+            }
+          });
+        };
+        buttons[1].onclick = () => {
+          showC1(`确定要删除备份 [${name}] 吗？删除后不可恢复！`, ok => {
+            if (!ok) return;
+            const updated = getBackupsList().filter(x => x.id !== bk.id);
+            saveBackupsList(updated);
+            renderBackupsList();
+            lg('system', '🗑️', `删除了备份：「${name}」`);
+          });
+        };
+
+        container.appendChild(item);
+      });
+    }
+
+    d('new-game-btn').addEventListener('click', () => {
+      renderBackupsList();
       showMod('mod-newgame');
     });
     d('ng-cancel').addEventListener('click', () => hideMod('mod-newgame'));
     d('ng-confirm1').addEventListener('click', () => { hideMod('mod-newgame'); doNewGame(); });
     d('ng-backup-reset').addEventListener('click', () => {
+      const name = prompt('请输入此备份的描述/备注名称：', `游戏备份_${new Date().toLocaleTimeString('zh-CN')}`);
+      if (name === null) return; // cancelled
+      const desc = name.trim() || `未命名备份`;
       const gs = exportGameState();
-      gs._backupTime = Date.now();
-      localStorage.setItem('gduck_backup_' + currentRoomId, JSON.stringify(gs));
-      hideMod('mod-newgame');
-      lg('system', '💾', '游戏进度已备份！');
-      doNewGame();
-    });
-    d('ng-restore-backup').addEventListener('click', () => {
-      const bk = localStorage.getItem('gduck_backup_' + currentRoomId);
-      if (!bk) { alert('没有可用的备份！'); return; }
-      showC1('确定要恢复备份的游戏进度吗？当前进度将被覆盖。', ok => {
-        if (!ok) return;
-        try {
-          const bkData = JSON.parse(bk);
-          delete bkData._backupTime;
-          hideMod('mod-newgame');
-          applyRemoteGameState(bkData);
-          onStateChanged();
-          lg('system', '🔄', '备份游戏已恢复！');
-        } catch(e) {
-          alert('备份数据损坏，无法恢复。');
-        }
+      const backups = getBackupsList();
+      backups.push({
+        id: Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        time: Date.now(),
+        name: desc,
+        state: gs
       });
+      saveBackupsList(backups);
+      hideMod('mod-newgame');
+      lg('system', '💾', `当前游戏进度已备份为：「${desc}」`);
+      doNewGame();
     });
     // Bell icon click: open join modal and clear notification dot
     d('online-badge').addEventListener('click', () => {
