@@ -3175,21 +3175,11 @@
       <select class="ri2" id="am-site-select"></select>
     </div>
     <div id="am-site-summary" style="font-size:.82rem;color:var(--ts);line-height:1.5;max-height:120px;overflow:auto;margin-bottom:10px"></div>
-    <div class="sg" style="margin-bottom: 12px; grid-template-columns: repeat(3, 1fr); gap: 6px;">
-      <div class="sc2 clickable" id="am-add" style="padding: 8px 4px;">
-        <div class="sn" style="font-size: 1.2rem; margin-bottom: 2px;">✅</div>
-        <div class="sl" style="font-size: 0.7rem; font-weight: 700; color: #5A9E6A;">+1 任务</div>
-      </div>
-      <div class="sc2 clickable" id="am-add-2" style="padding: 8px 4px;">
-        <div class="sn" style="font-size: 1.2rem; margin-bottom: 2px;">✅</div>
-        <div class="sl" style="font-size: 0.7rem; font-weight: 700; color: #A8B860;">+2 任务</div>
-      </div>
-      <div class="sc2 clickable" id="am-add-3" style="padding: 8px 4px;">
-        <div class="sn" style="font-size: 1.2rem; margin-bottom: 2px;">✅</div>
-        <div class="sl" style="font-size: 0.7rem; font-weight: 700; color: #7FA880;">+3 任务</div>
-      </div>
+    <div class="mrow" style="margin-bottom:10px">
+      <label>手动调整：</label>
+      <input type="number" class="ni" id="am-custom-score" value="1" min="-99" max="99" placeholder="输入分数" style="width:70px">
+      <button class="btn bp sm" id="am-custom-add">确认</button>
     </div>
-    <button class="ab ts" id="am-sub">❌ -1 任务</button>
     <button class="ab el" id="am-elim">💀 往生</button>
     <button class="ab re" id="am-res" style="display:none">✨ 重生</button>
     <button class="ab ro" id="am-role">🎭 设定身份</button>
@@ -3890,8 +3880,16 @@
             recalcPlayerTotals(p);
             p.votes = sp.votes || 0; p.pkVotes = sp.pkVotes || 0;
             const wasDead = p.element.classList.contains('eliminated');
+            const wasResurrected = p.element.classList.contains('resurrected');
             if (sp.dead && !wasDead) elimP(p.element, true);
             else if (!sp.dead && wasDead) resP(p.element, true);
+            // 确保恢复 resurrected 状态
+            if (sp.resurrected && !wasResurrected) {
+              p.element.classList.add('resurrected');
+              p.element.querySelector('.sdot').className = 'sdot res';
+            } else if (!sp.resurrected && wasResurrected) {
+              p.element.classList.remove('resurrected');
+            }
             if (sp.role !== p.element.dataset.role) setRole(p.element, sp.role);
             const vin = d('vin-' + p.id); if (vin && document.activeElement !== vin) vin.value = p.votes;
           });
@@ -4247,10 +4245,7 @@
     function closeMenu() { menuEl.classList.remove('open'); bdEl.classList.remove('open') }
     bdEl.addEventListener('click', closeMenu);
     d('am-close').addEventListener('click', closeMenu);
-    d('am-add').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return; const siteId = d('am-site-select')?.value || GS.currentSiteId; adjustSiteScore(p, siteId, 1); closeMenu() });
-    d('am-add-2').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return; const siteId = d('am-site-select')?.value || GS.currentSiteId; adjustSiteScore(p, siteId, 2); closeMenu() });
-    d('am-add-3').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return; const siteId = d('am-site-select')?.value || GS.currentSiteId; adjustSiteScore(p, siteId, 3); closeMenu() });
-    d('am-sub').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return; const siteId = d('am-site-select')?.value || GS.currentSiteId; adjustSiteScore(p, siteId, -1); closeMenu() });
+    d('am-custom-add').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p) return; const siteId = d('am-site-select')?.value || GS.currentSiteId; const scoreVal = parseInt(d('am-custom-score').value) || 0; adjustSiteScore(p, siteId, scoreVal); d('am-custom-score').value = '1'; closeMenu() });
     d('am-elim').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者往生吗？', ok => { if (!ok) return; elimP(c); updStats(); refCands(); refPickers(); onStateChanged() }) });
     d('am-res').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者重生吗？', ok => { if (!ok) return; resP(c); updStats(); refCands(); refPickers(); onStateChanged() }) });
     d('am-role').addEventListener('click', () => { showMod('mod-role'); closeMenu() });
