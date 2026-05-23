@@ -2719,6 +2719,7 @@
         style="display:none; padding:2px 6px; font-size:0.7rem;">立即刷新</button>
       <button class="btn bd sm" id="emergency-alert-btn">🚨 紧急通报</button>
       <div class="online-badge" id="online-badge" style="cursor: pointer; position: relative; overflow: visible;">🔔 <span id="online-count">1</span> 人在线<div id="bell-dot" style="position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background-color: var(--suc); border: 2.5px solid var(--sand); display: none;"></div></div>
+      <div class="online-badge" id="notify-badge" style="cursor: pointer; position: relative; overflow: visible; background: linear-gradient(135deg, var(--sc), var(--rust)); color: white; margin-left: 6px;">📢 消息 (<span id="notify-count">0</span>)<div id="notify-dot" style="position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background-color: var(--erc); border: 2.5px solid var(--sand); display: none;"></div></div>
       <button class="btn bp sm" id="join-room-btn">🔗 加入房间</button>
       <button class="btn bleave sm" id="leave-room-btn" style="display:none">🚪 退出房间</button>
       <button class="btn bnew sm" id="new-game-btn">🌅 新游戏</button>
@@ -2771,6 +2772,7 @@
         <button class="tbtn" data-tab="sab">🦆 破坏</button>
         <button class="tbtn" data-tab="music">🎵 音乐</button>
         <button class="tbtn" data-tab="log">📋 日志</button>
+        <button class="tbtn" data-tab="stations">📍 站点</button>
       </div>
 
       <!-- DASHBOARD -->
@@ -3101,6 +3103,45 @@
           <div class="le system"><span>🏮</span><span class="lt" id="init-t">--:--</span><span>控制台启动…</span></div>
         </div>
       </div>
+
+      <!-- STATIONS -->
+      <div class="tc ti" id="tab-stations">
+        <div class="stations-layout" style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+          <!-- 站点配置 -->
+          <div class="card" style="padding: 14px;">
+            <div class="card-accent"></div>
+            <div class="cb">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <h4 style="margin:0;">📍 站点名录配置</h4>
+                <button class="btn bp sm" id="add-station-btn" style="height:28px; font-size:0.78rem;">➕ 新增站点</button>
+              </div>
+              <div id="stations-config-list" style="display:flex; flex-direction:column; gap:8px;">
+                <!-- 动态配置列表 -->
+              </div>
+            </div>
+          </div>
+
+          <!-- 积分矩阵 -->
+          <div class="card" style="padding: 14px; overflow: hidden;">
+            <div class="card-accent"></div>
+            <div class="cb">
+              <h4 style="margin-bottom:10px;">📊 修行者 × 站点 积分矩阵</h4>
+              <div style="overflow-x: auto; width:100%; border-radius: 8px; border: 1.5px solid var(--border);">
+                <table class="stations-matrix-table" style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; background: rgba(255,255,255,0.3);">
+                  <thead style="background: rgba(196,150,58,0.08); font-weight: bold; color: var(--tp);">
+                    <tr id="matrix-thead-tr">
+                      <!-- 动态表头 -->
+                    </tr>
+                  </thead>
+                  <tbody id="matrix-tbody">
+                    <!-- 动态表格内容 -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3110,8 +3151,11 @@
   <div class="am-backdrop" id="am-backdrop"></div>
   <div class="am" id="act-menu">
     <div class="amname" id="am-pname">玩家</div>
-    <div class="task-add-control" style="margin-bottom: 12px; display: flex; gap: 8px; align-items: center;">
-      <select id="am-task-points" style="flex: 1; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 12px; font-weight: bold; background: rgba(255,255,255,0.9); color: var(--tp); text-align: center; font-size: 0.86rem; font-family: inherit; height: 38px; outline: none; transition: border-color 0.2s;">
+    
+    <!-- 特定站点任务加减分 -->
+    <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 0.8rem; font-weight: bold; color: var(--ts); flex-shrink: 0;">加/减步长：</span>
+      <select id="am-task-points" style="flex: 1; padding: 4px 8px; border: 1.5px solid var(--border); border-radius: 8px; font-weight: bold; background: rgba(255,255,255,0.9); color: var(--tp); text-align: center; font-size: 0.8rem; height: 28px; outline: none;">
         <option value="1">1 分</option>
         <option value="2">2 分</option>
         <option value="3">3 分</option>
@@ -3123,11 +3167,15 @@
         <option value="9">9 分</option>
         <option value="10">10 分</option>
       </select>
-      <button class="btn bsc" id="am-add-task-btn" style="flex: 2; padding: 8px 12px; font-size: 0.86rem; height: 38px; margin-top: 0;">✅ 增加任务分</button>
     </div>
-    <button class="ab ts" id="am-sub">❌ -1 任务</button>
+    <div style="font-size: 0.8rem; font-weight: bold; color: var(--ts); margin-bottom: 6px; text-align: left; padding-left: 4px;">📍 站点任务调整：</div>
+    <div id="am-stations-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; border: 1.5px solid var(--border); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.5);">
+      <!-- 动态填充 -->
+    </div>
+
     <button class="ab el" id="am-elim">💀 往生</button>
     <button class="ab re" id="am-res" style="display:none">✨ 重生</button>
+    <button class="ab bo" id="am-recommend-death" style="background: linear-gradient(135deg, var(--sc), var(--erc)); color: white;">💀 推荐死亡</button>
     <button class="ab ro" id="am-role">🎭 设定身份</button>
     <button class="ab cl" id="am-close">✕ 关闭</button>
   </div>
@@ -3174,6 +3222,21 @@
           <button class="btn bw" id="ng-backup-reset" style="flex: 1; font-size: 0.8rem;">💾 备份并开始</button>
           <button class="btn bsc" id="ng-restore-backup" style="flex: 1; font-size: 0.8rem;">🔄 恢复备份游戏</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mo" id="mod-notify">
+    <div class="mod" style="max-width: 420px; width: 90%;">
+      <div class="mtitle">📢 推荐死亡通知栏</div>
+      <div class="mcont">
+        <div id="notify-list" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; border: 1.5px solid var(--border); border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.5);">
+          <div style="color: var(--ts); text-align: center; font-size: 0.84rem; padding: 20px 0;" id="notify-empty">暂无推荐通知</div>
+        </div>
+      </div>
+      <div class="mact" style="display: flex; gap: 8px; width: 100%;">
+        <button class="btn bo" id="notify-clear" style="flex: 1; font-size: 0.84rem;">🗑️ 清空消息</button>
+        <button class="btn bp" id="notify-close" style="flex: 1; font-size: 0.84rem;">✕ 关闭</button>
       </div>
     </div>
   </div>
@@ -3528,8 +3591,53 @@
         startEmergencyAlert(true);
       } else if (action.type === 'emergency-alert-stop') {
         stopEmergencyAlert(action.triggerCooldown, true);
+      } else if (action.type === 'recommend-death') {
+        lg('eliminate', '💀', `[通知] 收到推荐往生：玩家 ${action.playerName}`);
+        addNotification(`控制台 [房间 ${action.fromRoom}] 推荐 [${action.playerName}] 往生！`, true);
       }
     });
+
+    function addNotification(text, isSync = false) {
+      if (!GS.notifications) GS.notifications = [];
+      const id = Date.now() + Math.random().toString(36).substr(2, 5);
+      const time = gt();
+      GS.notifications.push({ id, time, text });
+      if (GS.notifications.length > 50) GS.notifications.shift();
+      renderNotifications();
+      const countEl = d('notify-count');
+      const dotEl = d('notify-dot');
+      if (countEl) countEl.textContent = GS.notifications.length;
+      if (dotEl && isSync) {
+        dotEl.style.display = 'block';
+        dotEl.classList.remove('dot-flash-3');
+        void dotEl.offsetWidth;
+        dotEl.classList.add('dot-flash-3');
+        dotEl.addEventListener('animationend', () => dotEl.classList.remove('dot-flash-3'), { once: true });
+        tone(660, .12, 'sine', .48);
+      }
+    }
+
+    function renderNotifications() {
+      const listEl = d('notify-list');
+      if (!listEl) return;
+      if (!GS.notifications || GS.notifications.length === 0) {
+        listEl.innerHTML = '<div style="color: var(--ts); text-align: center; font-size: 0.84rem; padding: 20px 0;" id="notify-empty">暂无推荐通知</div>';
+        return;
+      }
+      listEl.innerHTML = '';
+      GS.notifications.slice().reverse().forEach(n => {
+        const item = document.createElement('div');
+        item.style.cssText = 'padding: 8px 10px; background: rgba(196,150,58,0.06); border-radius: 8px; border: 1px solid var(--border); font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;';
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--ts); font-weight: bold;">
+            <span>💀 推荐往生提醒</span>
+            <span>${n.time}</span>
+          </div>
+          <div style="color: var(--tp); text-align: left; line-height: 1.3;">${escHtml(n.text)}</div>
+        `;
+        listEl.appendChild(item);
+      });
+    }
 
     // 在线人数变化
     socket.on('occupancy-update', (count) => {
@@ -3750,9 +3858,11 @@
     function exportGameState() {
       return {
         teams: GS.teams,
+        stations: GS.stations || [],
         players: GS.players.map(p => ({
           id: p.id, name: p.name, teamIdx: p.teamIdx,
           role: p.element.dataset.role, tasks: p.tasks,
+          stationTasks: p.stationTasks || {},
           votes: p.votes || 0, pkVotes: p.pkVotes || 0,
           dead: p.element.classList.contains('eliminated'),
           resurrected: p.element.classList.contains('resurrected')
@@ -3784,6 +3894,12 @@
       if (!gs || _applyingRemote) return;
       _applyingRemote = true;
       try {
+        // Stations
+        if (gs.stations && JSON.stringify(gs.stations) !== JSON.stringify(GS.stations)) {
+          GS.stations = gs.stations;
+          if (typeof renderStationConfig === 'function') renderStationConfig();
+          if (typeof renderStationMatrix === 'function') renderStationMatrix();
+        }
         // Teams
         if (gs.teams && JSON.stringify(gs.teams) !== JSON.stringify(GS.teams)) {
           GS.teams = gs.teams; buildTeamConfigUI();
@@ -3801,7 +3917,11 @@
         if (gs.players) {
           gs.players.forEach(sp => {
             const p = GS.players.find(x => x.id === sp.id); if (!p) return;
-            if (p.tasks !== sp.tasks) { p.tasks = sp.tasks; p.element.querySelector('.tc').textContent = sp.tasks; }
+            p.stationTasks = sp.stationTasks || {};
+            // Recompute total tasks from stationTasks
+            const total = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
+            p.tasks = total;
+            p.element.querySelector('.tc').textContent = p.tasks;
             p.votes = sp.votes || 0; p.pkVotes = sp.pkVotes || 0;
             const wasDead = p.element.classList.contains('eliminated');
             const wasResurrected = p.element.classList.contains('resurrected');
@@ -3928,7 +4048,9 @@
       sabPunishKillList: [],
       emergencyTimer: null, emergencySoundIv: null, emergencyActive: false, emergencyCooldown: false, emergencyCooldownRemain: 0, emergencyCooldownEndTime: 0,
       sabCooldownTimer: null, sabCooldownActive: false, sabCooldownRemain: 0, sabCooldownEndTime: 0,
-      lastOnlineCount: 0
+      lastOnlineCount: 0,
+      stations: ['藏经阁', '大雄宝殿', '修行场'],
+      notifications: []
     };
 
     function d(id) { return document.getElementById(id) }
@@ -4125,37 +4247,125 @@
     // ═══════════════════════════════════════════════════════════
     // PLAYERS
     // ═══════════════════════════════════════════════════════════
-    function genPlayers(skipPush) { document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; let pid = 1; GS.teams.forEach((team, i) => { const sz = team.count || 0; if (!sz) return; const sec = document.createElement('div'); sec.className = 'card tsec'; sec.innerHTML = `<div class="card-accent"></div><div class="cb"><div class="tthd"><div class="ttitle">${escHtml(team.name)}组</div><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><div class="tmeta">成员 ${sz} 人</div><div class="tmeta">组内任务：<strong id="tt-${i + 1}" style="color:var(--pc)">0</strong></div></div></div><div class="pg" id="tg-${i + 1}"></div></div>`; document.getElementById('teams-container').appendChild(sec); const grid = sec.querySelector(`#tg-${i + 1}`); for (let j = 1; j <= sz; j++) { const card = mkCard(pid, team.name, j, i + 1); grid.appendChild(card); GS.players.push({ id: pid, element: card, name: `${team.name}${j}`, role: '', teamIdx: i + 1, tasks: 0, votes: 0, pkVotes: 0 }); pid++ } }); updStats(); refCands(); refPickers(); if (!skipPush) { lg('system', '🏮', `队伍更新，共 ${GS.players.length} 名修行者`); onStateChanged() } }
+    function genPlayers(skipPush) { document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; let pid = 1; GS.teams.forEach((team, i) => { const sz = team.count || 0; if (!sz) return; const sec = document.createElement('div'); sec.className = 'card tsec'; sec.innerHTML = `<div class="card-accent"></div><div class="cb"><div class="tthd"><div class="ttitle">${escHtml(team.name)}组</div><div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap"><div class="tmeta">成员 ${sz} 人</div><div class="tmeta">组内任务：<strong id="tt-${i + 1}" style="color:var(--pc)">0</strong></div></div></div><div class="pg" id="tg-${i + 1}"></div></div>`; document.getElementById('teams-container').appendChild(sec); const grid = sec.querySelector(`#tg-${i + 1}`); for (let j = 1; j <= sz; j++) { const card = mkCard(pid, team.name, j, i + 1); grid.appendChild(card); const st = {}; if (GS.stations) { GS.stations.forEach(s => st[s] = 0); } GS.players.push({ id: pid, element: card, name: `${team.name}${j}`, role: '', teamIdx: i + 1, tasks: 0, stationTasks: st, votes: 0, pkVotes: 0 }); pid++ } }); updStats(); refCands(); refPickers(); if (!skipPush) { lg('system', '🏮', `队伍更新，共 ${GS.players.length} 名修行者`); onStateChanged() } }
     function mkCard(id, team, num, ti) { const c = document.createElement('div'); c.className = 'pc2'; c.dataset.id = id; c.dataset.role = ''; c.dataset.ti = ti; c.innerHTML = `<span class="sdot alive"></span><div class="pname">${escHtml(team)}${num}</div><div class="prole"></div><div class="ptask">✅ <span class="tc">0</span></div>`; c.addEventListener('click', () => openMenu(c)); return c }
 
     // ACTION MENU
+    // ACTION MENU
     const menuEl = d('act-menu'), bdEl = d('am-backdrop');
-    function openMenu(card) { if (GS.manualMode) { GS.curCard = card; showMod('mod-role'); return } GS.curCard = card; const p = gp(card); d('am-pname').textContent = p ? p.name : ''; const dead = card.classList.contains('eliminated'); d('am-elim').style.display = dead ? 'none' : 'flex'; d('am-res').style.display = dead ? 'flex' : 'none'; bdEl.classList.add('open'); menuEl.classList.add('open') }
+    function openMenu(card) {
+      if (GS.manualMode) { GS.curCard = card; showMod('mod-role'); return }
+      GS.curCard = card;
+      const p = gp(card);
+      d('am-pname').textContent = p ? p.name : '';
+      const dead = card.classList.contains('eliminated');
+      d('am-elim').style.display = dead ? 'none' : 'flex';
+      d('am-res').style.display = dead ? 'flex' : 'none';
+      if (p) {
+        if (!p.stationTasks) p.stationTasks = {};
+        if (GS.stations) {
+          GS.stations.forEach(s => {
+            if (p.stationTasks[s] === undefined) p.stationTasks[s] = 0;
+          });
+        }
+      }
+      renderActionMenuStations();
+      bdEl.classList.add('open');
+      menuEl.classList.add('open');
+    }
     function closeMenu() { menuEl.classList.remove('open'); bdEl.classList.remove('open') }
     bdEl.addEventListener('click', closeMenu);
     d('am-close').addEventListener('click', closeMenu);
-    d('am-add-task-btn').addEventListener('click', () => {
-      const c = GS.curCard; if (!c) return;
-      const p = gp(c); if (!p) return;
+
+    function renderActionMenuStations() {
+      const c = GS.curCard;
+      if (!c) return;
+      const p = gp(c);
+      if (!p) return;
+      const listEl = d('am-stations-list');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      if (!GS.stations || GS.stations.length === 0) {
+        listEl.innerHTML = '<div style="color: var(--ts); font-size: 0.8rem; text-align: center; padding: 10px 0;">无可用站点</div>';
+        return;
+      }
+      GS.stations.forEach(sName => {
+        const score = p.stationTasks[sName] || 0;
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px dashed rgba(196,150,58,0.15);';
+        row.innerHTML = `
+          <span style="font-weight: bold; font-size: 0.82rem; color: var(--tp); text-align: left; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escHtml(sName)}</span>
+          <span style="font-weight: 700; color: var(--pc); font-size: 0.82rem; min-width: 30px; text-align: center;">${score}分</span>
+          <button class="btn bsc sm" style="padding: 2px 8px; font-size: 0.72rem; height: 24px; line-height: 1; margin-top: 0; min-width:32px;">➕</button>
+          <button class="btn bo sm" style="padding: 2px 8px; font-size: 0.72rem; height: 24px; line-height: 1; margin-top: 0; min-width:32px;">➖</button>
+        `;
+        row.querySelectorAll('button')[0].onclick = () => adjustPlayerStationTask(sName, 1);
+        row.querySelectorAll('button')[1].onclick = () => adjustPlayerStationTask(sName, -1);
+        listEl.appendChild(row);
+      });
+    }
+
+    function adjustPlayerStationTask(stationName, dir) {
+      const c = GS.curCard;
+      if (!c) return;
+      const p = gp(c);
+      if (!p) return;
       let pts = parseInt(d('am-task-points').value) || 1;
       const isDead = c.classList.contains('eliminated');
-      if (isDead) pts = 1;
-      p.tasks += pts;
-      c.querySelector('.tc').textContent = p.tasks;
-      GS.totalTasks += pts;
-      c.classList.add('tf');
-      setTimeout(() => c.classList.remove('tf'), 650);
-      sfxTask(); updStats(); updTT();
-      if (isDead) {
-        lg('task', '✅', `[往生者] ${p.name} 完成任务（强制+1分，原选${d('am-task-points').value}分）· 全场${GS.totalTasks}`);
+      
+      if (dir > 0) {
+        if (isDead) pts = 1;
+        if (!p.stationTasks) p.stationTasks = {};
+        p.stationTasks[stationName] = (p.stationTasks[stationName] || 0) + pts;
+        
+        const calculatedTasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
+        const diff = calculatedTasks - p.tasks;
+        p.tasks = calculatedTasks;
+        c.querySelector('.tc').textContent = p.tasks;
+        GS.totalTasks += diff;
+        c.classList.add('tf');
+        setTimeout(() => c.classList.remove('tf'), 650);
+        sfxTask(); updStats(); updTT();
+        
+        if (isDead) {
+          lg('task', '✅', `[往生者] ${p.name} 在 ${stationName} 完成任务（强制+1分，原选${d('am-task-points').value}分）· 全场${GS.totalTasks}`);
+        } else {
+          lg('task', '✅', `${p.name} 在 ${stationName} 完成任务 +${pts}（共${p.stationTasks[stationName]}分）· 全场${GS.totalTasks}`);
+        }
       } else {
-        lg('task', '✅', `${p.name} 完成任务 +${pts}（共${p.tasks}个）· 全场${GS.totalTasks}`);
+        if (!p.stationTasks) p.stationTasks = {};
+        const score = p.stationTasks[stationName] || 0;
+        const s = Math.min(score, pts);
+        p.stationTasks[stationName] = score - s;
+        
+        const calculatedTasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
+        const diff = p.tasks - calculatedTasks;
+        p.tasks = calculatedTasks;
+        c.querySelector('.tc').textContent = p.tasks;
+        GS.totalTasks = Math.max(0, GS.totalTasks - diff);
+        sfxDeduct(); updStats(); updTT();
+        lg('deduct', '❌', `${p.name} 在 ${stationName} 任务-${s}（剩${p.stationTasks[stationName]}分）`);
       }
-      onStateChanged(); closeMenu();
+      onStateChanged();
+      renderActionMenuStations();
+      renderStationMatrix();
+    }
+
+    d('am-elim').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者往生吗？', ok => { if (!ok) return; elimP(c); updStats(); refCands(); refPickers(); onStateChanged(); renderStationMatrix(); }) });
+    d('am-res').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者重生吗？', ok => { if (!ok) return; resP(c); updStats(); refCands(); refPickers(); onStateChanged(); renderStationMatrix(); }) });
+    d('am-recommend-death').addEventListener('click', () => {
+      const c = GS.curCard;
+      if (!c) return;
+      const p = gp(c);
+      if (!p) return;
+      closeMenu();
+      showC1(`确定推荐修行者 [${p.name}] 往生吗？推荐将送达所有联机终端。`, ok => {
+        if (!ok) return;
+        lg('system', '💀', `推荐往生：玩家 ${p.name}`);
+        addNotification(`我方控制台推荐 [${p.name}] 往生！`, false);
+        socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'recommend-death', playerName: p.name, pId: p.id, fromRoom: currentRoomId } });
+      });
     });
-    d('am-sub').addEventListener('click', () => { const c = GS.curCard; if (!c) return; const p = gp(c); if (!p || p.tasks <= 0) return; p.tasks--; c.querySelector('.tc').textContent = p.tasks; GS.totalTasks = Math.max(0, GS.totalTasks - 1); updStats(); updTT(); lg('deduct', '❌', `${p.name} 任务-1（剩${p.tasks}）`); onStateChanged(); closeMenu() });
-    d('am-elim').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者往生吗？', ok => { if (!ok) return; elimP(c); updStats(); refCands(); refPickers(); onStateChanged() }) });
-    d('am-res').addEventListener('click', () => { const c = GS.curCard; if (!c) return; closeMenu(); showC1('确定要让此修行者重生吗？', ok => { if (!ok) return; resP(c); updStats(); refCands(); refPickers(); onStateChanged() }) });
     d('am-role').addEventListener('click', () => { showMod('mod-role'); closeMenu() });
 
     // PLAYER STATUS
@@ -4164,7 +4374,7 @@
     function setRole(c, role) { c.classList.remove('goose', 'detective', 'sheriff', 'duck', 'pigeon', 'dodo', 'sr'); c.dataset.role = role; const rt = c.querySelector('.prole'); const p = gp(c); if (p) p.role = role; if (role) { rt.textContent = RN[role] || ''; if (GS.rolesVis) { c.classList.add('sr', role); rt.classList.add('vis') } else rt.classList.remove('vis') } else { rt.textContent = ''; rt.classList.remove('vis') } }
 
     // ROLES
-    function assignRoles() { const C = { goose: +d('cnt-goose').value || 0, detective: +d('cnt-det').value || 0, sheriff: +d('cnt-sher').value || 0, duck: +d('cnt-duck').value || 0, pigeon: +d('cnt-pig').value || 0, dodo: +d('cnt-dodo').value || 0 }; const total = Object.values(C).reduce((a, b) => a + b, 0); if (total !== GS.players.length) { alert(`角色总数(${total})必须等于修行者总数(${GS.players.length})！`); return } GS.players.forEach(p => { p.element.classList.remove('goose', 'detective', 'sheriff', 'duck', 'pigeon', 'dodo', 'sr', 'eliminated', 'resurrected', 'tf'); p.element.dataset.role = ''; p.element.querySelector('.sdot').className = 'sdot alive'; p.element.querySelector('.prole').textContent = ''; p.element.querySelector('.prole').classList.remove('vis'); p.tasks = 0; p.votes = 0; p.pkVotes = 0; p.role = ''; p.element.querySelector('.tc').textContent = '0' }); GS.totalTasks = 0; const sh = [...GS.players].sort(() => Math.random() - .5); let idx = 0;['sheriff', 'detective', 'duck', 'pigeon', 'dodo', 'goose'].forEach(role => { for (let i = 0; i < C[role]; i++) { if (idx < sh.length) { sh[idx].element.dataset.role = role; sh[idx].role = role; sh[idx].element.querySelector('.prole').textContent = RN[role] || ''; idx++ } } }); updStats(); refCands(); refPickers(); onStateChanged(); lg('system', '🎲', '身份随机分配完毕！') }
+    function assignRoles() { const C = { goose: +d('cnt-goose').value || 0, detective: +d('cnt-det').value || 0, sheriff: +d('cnt-sher').value || 0, duck: +d('cnt-duck').value || 0, pigeon: +d('cnt-pig').value || 0, dodo: +d('cnt-dodo').value || 0 }; const total = Object.values(C).reduce((a, b) => a + b, 0); if (total !== GS.players.length) { alert(`角色总数(${total})必须等于修行者总数(${GS.players.length})！`); return } GS.players.forEach(p => { p.element.classList.remove('goose', 'detective', 'sheriff', 'duck', 'pigeon', 'dodo', 'sr', 'eliminated', 'resurrected', 'tf'); p.element.dataset.role = ''; p.element.querySelector('.sdot').className = 'sdot alive'; p.element.querySelector('.prole').textContent = ''; p.element.querySelector('.prole').classList.remove('vis'); p.tasks = 0; p.votes = 0; p.pkVotes = 0; p.role = ''; p.element.querySelector('.tc').textContent = '0'; p.stationTasks = {}; if (GS.stations) { GS.stations.forEach(s => p.stationTasks[s] = 0); } }); GS.totalTasks = 0; const sh = [...GS.players].sort(() => Math.random() - .5); let idx = 0;['sheriff', 'detective', 'duck', 'pigeon', 'dodo', 'goose'].forEach(role => { for (let i = 0; i < C[role]; i++) { if (idx < sh.length) { sh[idx].element.dataset.role = role; sh[idx].role = role; sh[idx].element.querySelector('.prole').textContent = RN[role] || ''; idx++ } } }); updStats(); refCands(); refPickers(); onStateChanged(); renderStationMatrix(); lg('system', '🎲', '身份随机分配完毕！') }
     function showAllRoles() { GS.rolesVis = true; GS.players.forEach(p => { const r = p.element.dataset.role; if (!r) return; p.element.classList.add('sr', r); p.element.querySelector('.prole').classList.add('vis') }) }
     function hideAllRoles() { GS.rolesVis = false; GS.players.forEach(p => { p.element.classList.remove('sr', 'goose', 'detective', 'sheriff', 'duck', 'pigeon', 'dodo'); p.element.querySelector('.prole').classList.remove('vis') }) }
 
@@ -4175,10 +4385,40 @@
     d('sc-dodo').addEventListener('click', () => { GS.dodoReveal = !GS.dodoReveal; d('sl-dodo').textContent = GS.dodoReveal ? '痴迷鸽 🦤' : '秘密 🔒'; onStateChanged() });
 
     // BULK
-    d('bulk-add').addEventListener('click', () => { const n = +d('bulk-n').value || 1, alive = GS.players.filter(p => !p.element.classList.contains('eliminated')); showC1(`全场${alive.length}名存活者各+${n}任务，确认？`, ok => { if (!ok) return; alive.forEach(p => { p.tasks += n; p.element.querySelector('.tc').textContent = p.tasks }); GS.totalTasks += alive.length * n; sfxTask(); updStats(); updTT(); lg('task', '✅', `全场+${n}任务，总计${GS.totalTasks}`); onStateChanged() }) });
+    d('bulk-add').addEventListener('click', () => { const n = +d('bulk-n').value || 1, alive = GS.players.filter(p => !p.element.classList.contains('eliminated')); showC1(`全场${alive.length}名存活者各+${n}任务，确认？`, ok => { if (!ok) return; alive.forEach(p => { if (!p.stationTasks) p.stationTasks = {}; const firstStation = GS.stations[0] || '默认站点'; p.stationTasks[firstStation] = (p.stationTasks[firstStation] || 0) + n; p.tasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0); p.element.querySelector('.tc').textContent = p.tasks }); GS.totalTasks += alive.length * n; sfxTask(); updStats(); updTT(); renderStationMatrix(); lg('task', '✅', `全场各+${n}任务，已追加到首个站点「${GS.stations[0] || '默认站点'}」，总计${GS.totalTasks}`); onStateChanged() }) });
     d('tgt-set').addEventListener('click', () => { const t = +d('tgt-input').value || 80; GS.taskTarget = t; si('tgt-label', t); si('wc-task', t); updStats(); onStateChanged(); lg('system', '🎯', `任务目标${t}个`) });
 
-    function dedPct(pct) { const total = GS.totalTasks; const amt = Math.floor(total * pct / 100); if (!amt) return; let rem = amt;[...GS.players].filter(p => p.tasks > 0).sort((a, b) => b.tasks - a.tasks).forEach(p => { if (!rem) return; const s = Math.min(p.tasks, rem); p.tasks -= s; rem -= s; p.element.querySelector('.tc').textContent = p.tasks }); GS.totalTasks = Math.max(0, GS.totalTasks - amt); sfxDeduct(); updStats(); updTT(); lg('deduct', '⬇️', `扣除${pct}%(-${amt}个)，剩${GS.totalTasks}`); onStateChanged() }
+    function dedPct(pct) {
+      const total = GS.totalTasks;
+      const amt = Math.floor(total * pct / 100);
+      if (!amt) return;
+      let rem = amt;
+      [...GS.players].filter(p => p.tasks > 0).sort((a, b) => b.tasks - a.tasks).forEach(p => {
+        if (!rem) return;
+        const s = Math.min(p.tasks, rem);
+        if (!p.stationTasks) p.stationTasks = {};
+        let pRem = s;
+        for (const sName of GS.stations) {
+          const score = p.stationTasks[sName] || 0;
+          if (score > 0) {
+            const ded = Math.min(score, pRem);
+            p.stationTasks[sName] = score - ded;
+            pRem -= ded;
+            if (pRem <= 0) break;
+          }
+        }
+        p.tasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
+        rem -= s;
+        p.element.querySelector('.tc').textContent = p.tasks;
+      });
+      GS.totalTasks = Math.max(0, GS.totalTasks - amt);
+      sfxDeduct();
+      updStats();
+      updTT();
+      renderStationMatrix();
+      lg('deduct', '⬇️', `扣除${pct}%(-${amt}个)，已按站点分配扣除，剩${GS.totalTasks}`);
+      onStateChanged();
+    }
     function rkill(n, reason) { const killable = GS.players.filter(p => !p.element.classList.contains('eliminated') && GR.includes(p.element.dataset.role)); const kill = killable.sort(() => Math.random() - .5).slice(0, Math.min(n, killable.length)); if (!kill.length) { lg('system', '⚠️', '没有可暴毙的存活鹅'); return [] } kill.forEach(p => elimP(p.element)); updStats(); refCands(); refPickers(); lg('sabotage', '☠️', `${reason}！${kill.map(p => p.name).join('、')}倒下！`); onStateChanged(); return kill }
 
     // ═══════════════════════════════════════════════════════════
@@ -4241,6 +4481,156 @@
     d('verify-btn').addEventListener('click', () => { const sid = GS.selSher, aid = GS.selAcc; if (!sid || !aid) { alert('请选择护法鹅和被指认者！'); return } if (sid === aid) { alert('不能指认自己！'); return } const sher = GS.players.find(p => p.id === sid), acc = GS.players.find(p => p.id === aid); if (!sher || !acc) return; if (sher.element.dataset.role !== 'sheriff') { showResult(false, '⚠️', '身份不符', `${sher.name} 不是护法鹅！`, ''); return } const ar = acc.element.dataset.role, isDuck = ar === 'duck'; if (isDuck) { showResult(true, '✅', '挑战成功！', `${acc.name} 是【${RN[ar]}】！`, '→ 鸭子往生，护法鹅获胜！', () => { elimP(acc.element); updStats(); refCands(); refPickers(); lg('eliminate', '⚔️', `护法鹅挑战成功！${acc.name}往生！`); onStateChanged() }) } else { showResult(false, '❌', '挑战失败！', `${acc.name} 不是鸭子！`, `→ 护法鹅 ${sher.name} 自我往生！`, () => { elimP(sher.element); updStats(); refCands(); refPickers(); lg('eliminate', '⚔️', `护法鹅挑战失败！${sher.name}自我往生！`); onStateChanged() }) } });
     d('ann-elim-btn').addEventListener('click', () => { if (!GS.selAnnE) { alert('请先选择存活的修行者！'); return } const p = GS.players.find(x => x.id === GS.selAnnE); if (!p) return; if (p.element.classList.contains('eliminated')) { alert('该修行者已往生！'); return } showC1(`宣布 ${p.name} 往生？`, ok => { if (!ok) return; elimP(p.element); updStats(); refCands(); refPickers(); onStateChanged() }) });
     d('ann-res-btn').addEventListener('click', () => { if (!GS.selAnnR) { alert('请先选择已往生的修行者！'); return } const p = GS.players.find(x => x.id === GS.selAnnR); if (!p) return; if (!p.element.classList.contains('eliminated')) { alert('该修行者仍然存活！'); return } showC1(`宣布 ${p.name} 重生？`, ok => { if (!ok) return; resP(p.element); updStats(); refCands(); refPickers(); onStateChanged() }) });
+
+
+    // ═══════════════════════════════════════════════════════════
+    // STATIONS MANAGEMENT & MATRIX
+    // ═══════════════════════════════════════════════════════════
+    function renderStationConfig() {
+      const configList = d('stations-config-list');
+      if (!configList) return;
+      configList.innerHTML = '';
+      if (!GS.stations || GS.stations.length === 0) {
+        GS.stations = ['藏经阁', '大雄宝殿', '修行场'];
+      }
+      GS.stations.forEach((sName, idx) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+        row.innerHTML = `
+          <input class="ni" type="text" value="${escHtml(sName)}" style="flex: 1; padding: 6px 10px; font-size: 0.84rem; font-weight: bold; border: 1.5px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.85); color: var(--tp);" placeholder="站点名称">
+          <button class="btn bo sm" style="padding: 4px 8px; min-width: 28px; height: 32px; font-weight: bold;">✕</button>
+        `;
+        const input = row.querySelector('input');
+        input.addEventListener('change', function() {
+          const newName = this.value.trim();
+          if (newName === sName) return;
+          if (newName === '') {
+            this.value = sName;
+            return;
+          }
+          renameStation(sName, newName);
+        });
+        const delBtn = row.querySelector('button');
+        delBtn.onclick = () => deleteStation(sName);
+        configList.appendChild(row);
+      });
+    }
+
+    function addStation() {
+      if (!GS.stations) GS.stations = [];
+      const newName = `站点${GS.stations.length + 1}`;
+      if (GS.stations.includes(newName)) {
+        alert('新站点名冲突，请先更名现有站点！');
+        return;
+      }
+      GS.stations.push(newName);
+      GS.players.forEach(p => {
+        if (!p.stationTasks) p.stationTasks = {};
+        p.stationTasks[newName] = 0;
+      });
+      lg('system', '📍', `新增站点：「${newName}」`);
+      onStateChanged();
+      renderStationConfig();
+      renderStationMatrix();
+    }
+
+    function deleteStation(sName) {
+      if (!GS.stations || GS.stations.length <= 1) {
+        alert('必须保留至少一个活动站点！');
+        return;
+      }
+      showC1(`确定要删除站点 [${sName}] 吗？删除后所有修行者在该站点的得分将被清空！`, ok => {
+        if (!ok) return;
+        GS.stations = GS.stations.filter(s => s !== sName);
+        GS.players.forEach(p => {
+          if (p.stationTasks) {
+            delete p.stationTasks[sName];
+            p.tasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
+            p.element.querySelector('.tc').textContent = p.tasks;
+          }
+        });
+        GS.totalTasks = GS.players.reduce((sum, p) => sum + p.tasks, 0);
+        lg('system', '🗑️', `删除了站点：「${sName}」`);
+        sfxDeduct();
+        updStats();
+        updTT();
+        onStateChanged();
+        renderStationConfig();
+        renderStationMatrix();
+      });
+    }
+
+    function renameStation(oldName, newName) {
+      if (!newName || newName.trim() === '') return;
+      newName = newName.trim();
+      if (!GS.stations) return;
+      if (GS.stations.includes(newName)) {
+        alert('站点名称已存在！');
+        renderStationConfig();
+        return;
+      }
+      const idx = GS.stations.indexOf(oldName);
+      if (idx !== -1) {
+        GS.stations[idx] = newName;
+        GS.players.forEach(p => {
+          if (p.stationTasks) {
+            if (p.stationTasks[oldName] !== undefined) {
+              p.stationTasks[newName] = p.stationTasks[oldName];
+              delete p.stationTasks[oldName];
+            } else {
+              p.stationTasks[newName] = 0;
+            }
+          }
+        });
+        lg('system', '📍', `重命名站点：「${oldName}」 为 「${newName}」`);
+        onStateChanged();
+        renderStationConfig();
+        renderStationMatrix();
+      }
+    }
+
+    function renderStationMatrix() {
+      const theadTr = d('matrix-thead-tr');
+      const tbody = d('matrix-tbody');
+      if (!theadTr || !tbody) return;
+      
+      theadTr.innerHTML = '<th style="padding: 10px; border-bottom: 2px solid var(--border-strong); text-align: left;">修行者</th>';
+      if (!GS.stations || GS.stations.length === 0) {
+        GS.stations = ['藏经阁', '大雄宝殿', '修行场'];
+      }
+      GS.stations.forEach(sName => {
+        const th = document.createElement('th');
+        th.style.cssText = 'padding: 10px; border-bottom: 2px solid var(--border-strong);';
+        th.textContent = sName;
+        theadTr.appendChild(th);
+      });
+      theadTr.innerHTML += '<th style="padding: 10px; border-bottom: 2px solid var(--border-strong); color: var(--pc); font-weight: bold;">总进度</th>';
+
+      tbody.innerHTML = '';
+      if (!GS.players || GS.players.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${GS.stations.length + 2}" style="padding: 20px; color: var(--ts); font-size: 0.84rem;">暂无修行者数据</td></tr>`;
+        return;
+      }
+
+      GS.players.forEach((p, idx) => {
+        const row = document.createElement('tr');
+        row.style.cssText = idx % 2 === 0 ? 'background: rgba(255,255,255,0.1); border-bottom: 1px solid var(--border);' : 'background: rgba(196,150,58,0.02); border-bottom: 1px solid var(--border);';
+        
+        const deadClass = p.element.classList.contains('eliminated') ? 'text-decoration: line-through; opacity: 0.5; color: var(--erc);' : '';
+        let rowHtml = `<td style="padding: 8px 10px; text-align: left; font-weight: bold; ${deadClass}">${escHtml(p.name)}</td>`;
+        
+        GS.stations.forEach(sName => {
+          const score = (p.stationTasks && p.stationTasks[sName] !== undefined) ? p.stationTasks[sName] : 0;
+          rowHtml += `<td style="padding: 8px 10px; ${deadClass}">${score}分</td>`;
+        });
+        
+        rowHtml += `<td style="padding: 8px 10px; font-weight: bold; color: var(--pc); ${deadClass}">${p.tasks}分</td>`;
+        row.innerHTML = rowHtml;
+        tbody.appendChild(row);
+      });
+    }
+
+    d('add-station-btn').addEventListener('click', addStation);
 
     // SETUP BUTTONS
     d('assign-roles').addEventListener('click', () => { if (!GS.players.length) { alert('请先配置队伍！'); return } showC1('确定随机分配身份？所有现有身份将被重新分配。', ok => { if (ok) assignRoles() }) });
@@ -4312,7 +4702,27 @@
       dot.classList.remove('dot-flash-3');
       showMod('mod-join');
     });
-    function doNewGame() { if (GS.sabTimer) { clearInterval(GS.sabTimer); GS.sabTimer = null } stopSabAlert(); d('sab-banner').classList.remove('active'); d('meeting-banner').style.display = 'none'; stopDisc(); stopMeetingOverAlert(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false; d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); stopBG(); GS.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); buildTeamConfigUI();['cnt-goose', 'cnt-det', 'cnt-sher', 'cnt-duck', 'cnt-pig', 'cnt-dodo'].forEach(id => { const el = d(id); if (el) el.value = 0 }); document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; GS.meetRound = 1; GS.sabSuccessCount = 0; GS.rolesVis = false; GS.pigReveal = false; GS.dodoReveal = false; GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first'; GS.taskTarget = 80; GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; GS.sabPunishKillList = []; endSabotageCooldown(true); endEmergencyCooldown(true); d('m-round-input').value = 1; d('tgt-input').value = 80; si('tgt-label', 80); si('wc-task', 80); d('sl-pig').textContent = '秘密 🔒'; d('sl-dodo').textContent = '秘密 🔒'; d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show'); d('ev-log').innerHTML = ''; GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); updStats(); updTT(); refCands(); refPickers(); d('step2-btn').disabled = true; d('step3-btn').disabled = true; goToStep(1); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300); GS.lastOnlineCount = 1; d('online-count').textContent = '1'; const dot = d('bell-dot'); if (dot) { dot.style.display = 'none'; dot.classList.remove('dot-flash-3'); } onStateChanged(); lg('system', '🌅', '新游戏开始！所有进度已清空。') }
+    // Notification badge click: open notification list and clear red dot
+    d('notify-badge').addEventListener('click', () => {
+      const dot = d('notify-dot');
+      if (dot) {
+        dot.style.display = 'none';
+        dot.classList.remove('dot-flash-3');
+      }
+      showMod('mod-notify');
+    });
+    d('notify-close').addEventListener('click', () => hideMod('mod-notify'));
+    d('notify-clear').addEventListener('click', () => {
+      showC1('确定清空所有推荐死亡通知吗？', ok => {
+        if (!ok) return;
+        GS.notifications = [];
+        renderNotifications();
+        const countEl = d('notify-count');
+        if (countEl) countEl.textContent = '0';
+        lg('system', '🧹', '清空了所有推荐通知');
+      });
+    });
+    function doNewGame() { if (GS.sabTimer) { clearInterval(GS.sabTimer); GS.sabTimer = null } stopSabAlert(); d('sab-banner').classList.remove('active'); d('meeting-banner').style.display = 'none'; stopDisc(); stopMeetingOverAlert(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false; d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); stopBG(); GS.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); buildTeamConfigUI();['cnt-goose', 'cnt-det', 'cnt-sher', 'cnt-duck', 'cnt-pig', 'cnt-dodo'].forEach(id => { const el = d(id); if (el) el.value = 0 }); document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; GS.meetRound = 1; GS.sabSuccessCount = 0; GS.rolesVis = false; GS.pigReveal = false; GS.dodoReveal = false; GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first'; GS.taskTarget = 80; GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; GS.sabPunishKillList = []; endSabotageCooldown(true); endEmergencyCooldown(true); d('m-round-input').value = 1; d('tgt-input').value = 80; si('tgt-label', 80); si('wc-task', 80); d('sl-pig').textContent = '秘密 🔒'; d('sl-dodo').textContent = '秘密 🔒'; d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show'); d('ev-log').innerHTML = ''; GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); updStats(); updTT(); refCands(); refPickers(); d('step2-btn').disabled = true; d('step3-btn').disabled = true; goToStep(1); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300); GS.lastOnlineCount = 1; d('online-count').textContent = '1'; const dot = d('bell-dot'); if (dot) { dot.style.display = 'none'; dot.classList.remove('dot-flash-3'); } GS.notifications = []; renderNotifications(); const countEl = d('notify-count'); if (countEl) countEl.textContent = '0'; const ndot = d('notify-dot'); if (ndot) { ndot.style.display = 'none'; ndot.classList.remove('dot-flash-3'); } onStateChanged(); lg('system', '🌅', '新游戏开始！所有进度已清空。') }
 
     // END GAME
     d('end-game-btn').addEventListener('click', () => showMod('mod-eg-confirm'));
@@ -4345,7 +4755,14 @@
 
     // TABS
     document.querySelectorAll('.tbtn').forEach(b => b.addEventListener('click', () => activateTab(b.dataset.tab)));
-    function activateTab(id) { document.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === id)); document.querySelectorAll('.tc').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`)) }
+    function activateTab(id) {
+      document.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+      document.querySelectorAll('.tc').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
+      if (id === 'stations') {
+        renderStationConfig();
+        renderStationMatrix();
+      }
+    }
 
     // FIREWORKS
     let fwIv = null, fwTo = null;
