@@ -3189,6 +3189,17 @@
       </div>
     </div>
   </div>
+  <div class="mo" id="mod-save-confirm">
+    <div class="mod" style="max-width: 400px; width: 90%;">
+      <div class="mtitle">💾 保存确认</div>
+      <div class="mcont" id="sc-msg">检测到修行者分数已被修改，是否保存？</div>
+      <div class="mact" style="display: flex; gap: 8px; width: 100%;">
+        <button class="btn bp" id="sc-save" style="flex: 1; font-size: 0.8rem; padding: 8px 4px;">💾 保存并退出</button>
+        <button class="btn bo" id="sc-discard" style="flex: 1; font-size: 0.8rem; padding: 8px 4px;">🗑️ 不保存退出</button>
+        <button class="btn bw" id="sc-cancel" style="flex: 1; font-size: 0.8rem; padding: 8px 4px;">返回</button>
+      </div>
+    </div>
+  </div>
   <div class="mo" id="mod-newgame">
     <div class="mod" style="max-width: 440px; width: 95%;">
       <div class="mtitle">🌅 游戏重置与备份</div>
@@ -3582,6 +3593,8 @@
       } else if (action.type === 'recommend-death') {
         lg('eliminate', '💀', `[通知] 收到推荐往生：玩家 ${action.playerName}`);
         addNotification(`控制台 [房间 ${action.fromRoom}] 推荐 [${action.playerName}] 往生！`, true);
+      } else if (action.type === 'trigger-win') {
+        triggerWin(action.side, true);
       }
     });
 
@@ -4258,27 +4271,74 @@
             if (p.stationTasks[s] === undefined) p.stationTasks[s] = 0;
           });
         }
+        // Backup score info
+        GS.menuOriginalStationTasks = JSON.parse(JSON.stringify(p.stationTasks));
+        GS.menuOriginalTasks = p.tasks || 0;
+        GS.menuOriginalTotalTasks = GS.totalTasks;
+      } else {
+        GS.menuOriginalStationTasks = null;
+        GS.menuOriginalTasks = 0;
+        GS.menuOriginalTotalTasks = GS.totalTasks;
       }
+      GS.menuPendingLogs = [];
       renderActionMenuStations();
       bdEl.classList.add('open');
       menuEl.classList.add('open');
     }
     function closeMenu(force = false) {
       if (force !== true && GS.menuScoreChanged) {
-        showC1('检测到分数有变更，确定要关闭此菜单吗？', ok => {
-          if (ok) {
-            GS.menuScoreChanged = false;
-            closeMenu(true);
-          }
-        });
+        showMod('mod-save-confirm');
         return;
       }
+      if (force === true && GS.menuScoreChanged) {
+        if (GS.menuPendingLogs && GS.menuPendingLogs.length > 0) {
+          GS.menuPendingLogs.forEach(item => lg(item.type, item.icon, item.msg));
+        }
+        onStateChanged();
+      }
+      GS.menuPendingLogs = [];
       GS.menuScoreChanged = false;
       menuEl.classList.remove('open');
       bdEl.classList.remove('open');
     }
     bdEl.addEventListener('click', () => closeMenu(false));
     d('am-close').addEventListener('click', () => closeMenu(false));
+
+    d('sc-save').addEventListener('click', () => {
+      hideMod('mod-save-confirm');
+      if (GS.menuPendingLogs && GS.menuPendingLogs.length > 0) {
+        GS.menuPendingLogs.forEach(item => lg(item.type, item.icon, item.msg));
+      }
+      GS.menuPendingLogs = [];
+      GS.menuScoreChanged = false;
+      onStateChanged();
+      closeMenu(true);
+    });
+
+    d('sc-discard').addEventListener('click', () => {
+      hideMod('mod-save-confirm');
+      const c = GS.curCard;
+      if (c) {
+        const p = gp(c);
+        if (p && GS.menuOriginalStationTasks) {
+          p.stationTasks = JSON.parse(JSON.stringify(GS.menuOriginalStationTasks));
+          p.tasks = GS.menuOriginalTasks;
+          GS.totalTasks = GS.menuOriginalTotalTasks;
+          const tcEl = c.querySelector('.tc');
+          if (tcEl) tcEl.textContent = p.tasks;
+          updStats();
+          updTT();
+          renderStationMatrix();
+        }
+      }
+      GS.menuPendingLogs = [];
+      GS.menuScoreChanged = false;
+      closeMenu(true);
+    });
+
+    d('sc-cancel').addEventListener('click', () => {
+      hideMod('mod-save-confirm');
+    });
 
     function renderActionMenuStations() {
       const c = GS.curCard;
@@ -4331,9 +4391,17 @@
         sfxTask(); updStats(); updTT();
         
         if (isDead) {
-          lg('task', '✅', `[往生者] ${p.name} 在 ${stationName} 完成任务（强制+1分）· 全场${GS.totalTasks}`);
+          GS.menuPendingLogs.push({
+            type: 'task',
+            icon: '✅',
+            msg: `[往生者] ${p.name} 在 ${stationName} 完成任务（强制+1分）· 全场${GS.totalTasks}`
+          });
         } else {
-          lg('task', '✅', `${p.name} 在 ${stationName} 完成任务 +${pts}（共${p.stationTasks[stationName]}分）· 全场${GS.totalTasks}`);
+          GS.menuPendingLogs.push({
+            type: 'task',
+            icon: '✅',
+            msg: `${p.name} 在 ${stationName} 完成任务 +${pts}（共${p.stationTasks[stationName]}分）· 全场${GS.totalTasks}`
+          });
         }
         GS.menuScoreChanged = true;
       } else {
@@ -4349,11 +4417,14 @@
           c.querySelector('.tc').textContent = p.tasks;
           GS.totalTasks = Math.max(0, GS.totalTasks - diff);
           sfxDeduct(); updStats(); updTT();
-          lg('deduct', '❌', `${p.name} 在 ${stationName} 任务-${s}（剩${p.stationTasks[stationName]}分）`);
+          GS.menuPendingLogs.push({
+            type: 'deduct',
+            icon: '❌',
+            msg: `${p.name} 在 ${stationName} 任务-${s}（剩${p.stationTasks[stationName]}分）`
+          });
           GS.menuScoreChanged = true;
         }
       }
-      onStateChanged();
       renderActionMenuStations();
       renderStationMatrix();
     }
@@ -4781,7 +4852,7 @@
     d('win-goose').addEventListener('click', () => { hideMod('mod-eg-pick'); triggerWin('goose') });
     d('win-duck').addEventListener('click', () => { hideMod('mod-eg-pick'); triggerWin('duck') });
     d('win-pigeon').addEventListener('click', () => { hideMod('mod-eg-pick'); triggerWin('pigeon') });
-    function triggerWin(side) { const M = { goose: { icon: '🪿', title: '鹅阵营获胜！', msg: '光明战胜了黑暗！' }, duck: { icon: '🦆', title: '魔罗鸭获胜！', msg: '黑暗笼罩了道场！' }, pigeon: { icon: '🕊️', title: '鸽阵营获胜！', msg: '秘密使命完成！' } }; const m = M[side]; d('win-icon').textContent = m.icon; d('win-title').textContent = m.title; d('win-msg').textContent = m.msg; showMod('mod-win'); stopBG(); sfxWin(); launchFireworks(); lg('system', '🏆', m.title); onStateChanged() }
+    function triggerWin(side, isSync = false) { const M = { goose: { icon: '🪿', title: '鹅阵营获胜！', msg: '光明战胜了黑暗！' }, duck: { icon: '🦆', title: '魔罗鸭获胜！', msg: '黑暗笼罩了道场！' }, pigeon: { icon: '🕊️', title: '鸽阵营获胜！', msg: '秘密使命完成！' } }; const m = M[side]; d('win-icon').textContent = m.icon; d('win-title').textContent = m.title; d('win-msg').textContent = m.msg; showMod('mod-win'); stopBG(); sfxWin(); launchFireworks(); if (!isSync) { lg('system', '🏆', m.title); socket.emit('sync-action', { roomId: currentRoomId, action: { type: 'trigger-win', side: side } }); onStateChanged() } }
     d('win-ok').addEventListener('click', () => { hideMod('mod-win'); stopFireworks(); if (!GS.muted && !GS.bgmStopped) startBG() });
 
     // LOG
