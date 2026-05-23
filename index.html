@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>《鹅鸭杀：大厅潜行版》工委控制台</title>
+  <title>《鹅鸭嘎：大厅潜行版》工委控制台</title>
   <link
     href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
     rel="stylesheet">
@@ -1114,21 +1114,29 @@
     }
 
     @keyframes rGlowPersistent {
-      0%, 100% {
+
+      0%,
+      100% {
         box-shadow: 0 0 6px rgba(90, 158, 106, 0.4);
       }
+
       50% {
         box-shadow: 0 0 14px rgba(90, 158, 106, 0.9);
       }
     }
 
     @keyframes dotFlash {
-      0%, 50%, 100% {
+
+      0%,
+      50%,
+      100% {
         opacity: 1;
         background-color: var(--suc);
         box-shadow: 0 0 8px var(--suc);
       }
-      25%, 75% {
+
+      25%,
+      75% {
         opacity: 0.2;
         background-color: transparent;
         box-shadow: none;
@@ -2722,8 +2730,17 @@
       <button class="btn bo sm" id="emergency-refresh-btn"
         style="display:none; padding:2px 6px; font-size:0.7rem;">立即刷新</button>
       <button class="btn bd sm" id="emergency-alert-btn">🚨 紧急通报</button>
-      <div class="online-badge" id="online-badge" style="cursor: pointer; position: relative; overflow: visible;">🔔 <span id="online-count">1</span> 人在线<div id="bell-dot" style="position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background-color: var(--suc); border: 2.5px solid var(--sand); display: none;"></div></div>
-      <div class="online-badge" id="notify-badge" style="cursor: pointer; position: relative; overflow: visible; background: linear-gradient(135deg, var(--sc), var(--rust)); color: white; margin-left: 6px;">📢 消息 (<span id="notify-count">0</span>)<div id="notify-dot" style="position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background-color: var(--erc); border: 2.5px solid var(--sand); display: none;"></div></div>
+      <div class="online-badge" id="online-badge" style="cursor: pointer; position: relative; overflow: visible;">🔔
+        <span id="online-count">1</span> 人在线<div id="bell-dot"
+          style="position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background-color: var(--suc); border: 2.5px solid var(--sand); display: none;">
+        </div>
+      </div>
+      <div class="online-badge" id="notify-badge"
+        style="cursor: pointer; position: relative; overflow: visible; background: linear-gradient(135deg, var(--sc), var(--rust)); color: white; margin-left: 6px;">
+        📢 消息 (<span id="notify-count">0</span>)<div id="notify-dot"
+          style="position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background-color: var(--erc); border: 2.5px solid var(--sand); display: none;">
+        </div>
+      </div>
       <button class="btn bp sm" id="join-room-btn">🔗 加入房间</button>
       <button class="btn bleave sm" id="leave-room-btn" style="display:none">🚪 退出房间</button>
       <button class="btn bnew sm" id="new-game-btn">🌅 新游戏</button>
@@ -2734,7 +2751,7 @@
   </div>
 
   <header class="site-header">
-    <h1 class="mt">《鹅鸭杀：大厅潜行版》工委控制台</h1>
+    <h1 class="mt">《鹅鸭嘎：大厅潜行版》工委控制台</h1>
     <p class="sub-title">道场修行 · 任务积分 · 魔障潜伏 · 善恶轮回</p>
   </header>
 
@@ -2906,8 +2923,8 @@
               <div class="rii">
                 <div class="ricn">🦆</div>
                 <div>
-                  <div class="rnm">魔罗鸭（杀手）</div>
-                  <div class="rd">暗杀鹅，存活者≤鸭子数量获胜</div>
+                  <div class="rnm">魔罗鸭（🔪手）</div>
+                  <div class="rd">暗🔪鹅，存活者≤鸭子数量获胜</div>
                 </div>
               </div><input type="number" id="cnt-duck" class="ri2" min="0" max="60" value="0">
             </div>
@@ -3070,7 +3087,10 @@
           <div class="mrow" style="margin-bottom:9px"><label>任务描述：</label><input type="text" id="sab-desc" class="ti2"
               placeholder="例：大殿灯火熄灭，需10人前往指定点扶正蜡烛"></div>
           <div class="mrow"><label>倒计时（秒）：</label><input type="number" class="ni" id="sab-dur" value="120" min="30"
-              max="600"><button class="btn bd" id="trig-sab">🚨 触发破坏</button><span id="trig-sab-cd-text" style="display:none; font-size:0.8rem; color:var(--erc); font-weight:bold; margin-left: 12px;"></span><button class="btn bo sm" id="trig-sab-refresh-btn" style="display:none; padding:2px 6px; font-size:0.7rem; margin-left:8px;">立即刷新</button></div>
+              max="600"><button class="btn bd" id="trig-sab">🚨 触发破坏</button><span id="trig-sab-cd-text"
+              style="display:none; font-size:0.8rem; color:var(--erc); font-weight:bold; margin-left: 12px;"></span><button
+              class="btn bo sm" id="trig-sab-refresh-btn"
+              style="display:none; padding:2px 6px; font-size:0.7rem; margin-left:8px;">立即刷新</button></div>
         </div>
         <div class="sbox">
           <h4>💀 失败惩罚配置</h4>
@@ -3098,21 +3118,28 @@
 
       <!-- LOG -->
       <div class="tc ti" id="tab-log">
-        <div class="log-layout-container" style="display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 20px; align-items: start;">
+        <div class="log-layout-container"
+          style="display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 20px; align-items: start;">
           <!-- 技能使用记录 -->
           <div class="card" style="padding: 16px; margin-bottom: 0;">
-            <h4 style="margin-top: 0; margin-bottom: 14px; font-weight: 700; color: var(--tp); display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 0.95rem;">
+            <h4
+              style="margin-top: 0; margin-bottom: 14px; font-weight: 700; color: var(--tp); display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 0.95rem;">
               <span>🔮 技能使用记录</span>
-              <button class="btn bo sm" id="btn-toggle-skill-vis" style="padding: 2px 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; height: 22px;">🙈 隐藏身份</button>
+              <button class="btn bo sm" id="btn-toggle-skill-vis"
+                style="padding: 2px 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; height: 22px;">🙈
+                隐藏身份</button>
             </h4>
-            <div id="skills-list-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 280px; overflow-y: auto; padding-right: 2px;">
+            <div id="skills-list-container"
+              style="display: flex; flex-direction: column; gap: 12px; max-height: 280px; overflow-y: auto; padding-right: 2px;">
               <div style="color: var(--ts); text-align: center; font-size: 0.84rem; padding: 20px 0;">
                 暂无相关角色玩家<br>
                 <span style="font-size: 0.74rem; opacity: 0.8;">(请先在游戏配置分配身份)</span>
               </div>
             </div>
             <!-- Reset button -->
-            <button class="btn bo sm" id="btn-reset-skills" style="width: 100%; margin-top: 12px; padding: 6px 12px; font-size: 0.8rem; justify-content: center;">🔄 重置所有次数</button>
+            <button class="btn bo sm" id="btn-reset-skills"
+              style="width: 100%; margin-top: 12px; padding: 6px 12px; font-size: 0.8rem; justify-content: center;">🔄
+              重置所有次数</button>
           </div>
 
           <!-- 事件日志 -->
@@ -3136,7 +3163,8 @@
           <div class="card" style="padding: 14px;">
             <div class="card-accent"></div>
             <div class="cb">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
                 <h4 style="margin:0;">📍 站点名录配置</h4>
                 <button class="btn bp sm" id="add-station-btn" style="height:28px; font-size:0.78rem;">➕ 新增站点</button>
               </div>
@@ -3152,7 +3180,8 @@
             <div class="cb">
               <h4 style="margin-bottom:10px;">📊 修行者 × 站点 积分矩阵</h4>
               <div style="overflow-x: auto; width:100%; border-radius: 8px; border: 1.5px solid var(--border);">
-                <table class="stations-matrix-table" style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; background: rgba(255,255,255,0.3);">
+                <table class="stations-matrix-table"
+                  style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center; background: rgba(255,255,255,0.3);">
                   <thead style="background: rgba(196,150,58,0.08); font-weight: bold; color: var(--tp);">
                     <tr id="matrix-thead-tr">
                       <!-- 动态表头 -->
@@ -3176,15 +3205,19 @@
   <div class="am-backdrop" id="am-backdrop"></div>
   <div class="am" id="act-menu">
     <div class="amname" id="am-pname">玩家</div>
-    
-    <div style="font-size: 0.8rem; font-weight: bold; color: var(--ts); margin-bottom: 6px; text-align: left; padding-left: 4px;">📍 站点任务调整：</div>
-    <div id="am-stations-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; border: 1.5px solid var(--border); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.5);">
+
+    <div
+      style="font-size: 0.8rem; font-weight: bold; color: var(--ts); margin-bottom: 6px; text-align: left; padding-left: 4px;">
+      📍 站点任务调整：</div>
+    <div id="am-stations-list"
+      style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; border: 1.5px solid var(--border); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.5);">
       <!-- 动态填充 -->
     </div>
 
     <button class="ab el" id="am-elim">💀 往生</button>
     <button class="ab re" id="am-res" style="display:none">✨ 重生</button>
-    <button class="ab bo" id="am-recommend-death" style="background: linear-gradient(135deg, var(--sc), var(--erc)); color: white;">💀 推荐死亡</button>
+    <button class="ab bo" id="am-recommend-death"
+      style="background: linear-gradient(135deg, var(--sc), var(--erc)); color: white;">💀 推荐死亡</button>
     <button class="ab ro" id="am-role">🎭 设定身份</button>
     <button class="ab cl" id="am-close">✕ 关闭</button>
   </div>
@@ -3229,13 +3262,18 @@
     <div class="mod" style="max-width: 440px; width: 95%;">
       <div class="mtitle">🌅 游戏重置与备份</div>
       <div class="mcont" style="margin-bottom: 12px;">
-        <div class="newgame-warning" style="margin-bottom: 10px;"><strong>⚠️ 开始新游戏将重置所有数据：</strong>队伍配置 · 角色数量 · 玩家状态 · 任务进度 · 往生状态 · 会议轮次 · 事件日志。</div>
+        <div class="newgame-warning" style="margin-bottom: 10px;"><strong>⚠️ 开始新游戏将重置所有数据：</strong>队伍配置 · 角色数量 · 玩家状态 ·
+          任务进度 · 往生状态 · 会议轮次 · 事件日志。</div>
         <p style="font-size: 0.8rem; margin-bottom: 8px; color: var(--ts);">您可以选择备份当前进度以备后用。</p>
-        
+
         <!-- 多个备份管理区 -->
-        <div class="backups-section" style="margin-top: 12px; border-top: 1.5px dashed var(--border); padding-top: 12px;">
-          <div style="font-size: 0.82rem; font-weight: bold; color: var(--tp); margin-bottom: 8px; text-align: left; display: flex; align-items: center; gap: 4px;">📦 历史游戏备份名录：</div>
-          <div id="backups-list-container" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.4); border: 1.5px solid var(--border); border-radius: 12px; padding: 8px;">
+        <div class="backups-section"
+          style="margin-top: 12px; border-top: 1.5px dashed var(--border); padding-top: 12px;">
+          <div
+            style="font-size: 0.82rem; font-weight: bold; color: var(--tp); margin-bottom: 8px; text-align: left; display: flex; align-items: center; gap: 4px;">
+            📦 历史游戏备份名录：</div>
+          <div id="backups-list-container"
+            style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.4); border: 1.5px solid var(--border); border-radius: 12px; padding: 8px;">
             <!-- 动态生成备份列表 -->
           </div>
         </div>
@@ -3245,7 +3283,9 @@
           <button class="btn bo" id="ng-cancel" style="flex: 1;">取消</button>
           <button class="btn bd" id="ng-confirm1" style="flex: 1; font-size: 0.8rem;">🌅 直接新游戏</button>
         </div>
-        <button class="btn bw" id="ng-backup-reset" style="width: 100%; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px;">💾 备份当前并开启新游戏</button>
+        <button class="btn bw" id="ng-backup-reset"
+          style="width: 100%; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px;">💾
+          备份当前并开启新游戏</button>
       </div>
     </div>
   </div>
@@ -3254,8 +3294,10 @@
     <div class="mod" style="max-width: 420px; width: 90%;">
       <div class="mtitle">📢 推荐死亡通知栏</div>
       <div class="mcont">
-        <div id="notify-list" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; border: 1.5px solid var(--border); border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.5);">
-          <div style="color: var(--ts); text-align: center; font-size: 0.84rem; padding: 20px 0;" id="notify-empty">暂无推荐通知</div>
+        <div id="notify-list"
+          style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; border: 1.5px solid var(--border); border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.5);">
+          <div style="color: var(--ts); text-align: center; font-size: 0.84rem; padding: 20px 0;" id="notify-empty">
+            暂无推荐通知</div>
         </div>
       </div>
       <div class="mact" style="display: flex; gap: 8px; width: 100%;">
@@ -3993,15 +4035,15 @@
         if (gs.rolesVis !== undefined) { if (gs.rolesVis !== GS.rolesVis) { gs.rolesVis ? showAllRoles() : hideAllRoles(); } }
         if (gs.logHTML) d('ev-log').innerHTML = gs.logHTML;
         if (gs.skillRolesVis !== undefined) GS.skillRolesVis = gs.skillRolesVis;
-        
+
         if (gs.sabCooldownEndTime !== undefined && gs.sabCooldownEndTime > 0) {
           const remain = Math.max(0, Math.ceil((gs.sabCooldownEndTime - Date.now()) / 1000));
           if (remain > 0) {
             if (!GS.sabCooldownActive) {
-               startSabotageCooldown(remain, true, gs.sabCooldownEndTime);
+              startSabotageCooldown(remain, true, gs.sabCooldownEndTime);
             } else if (Math.abs((GS.sabCooldownRemain || 0) - remain) > 5) {
-               GS.sabCooldownRemain = remain;
-               GS.sabCooldownEndTime = gs.sabCooldownEndTime;
+              GS.sabCooldownRemain = remain;
+              GS.sabCooldownEndTime = gs.sabCooldownEndTime;
             }
           } else {
             if (GS.sabCooldownActive) endSabotageCooldown(true);
@@ -4009,23 +4051,23 @@
         } else if (gs.sabCooldownRemain !== undefined) {
           if (gs.sabCooldownRemain > 0) {
             if (!GS.sabCooldownActive) {
-               startSabotageCooldown(gs.sabCooldownRemain, true);
+              startSabotageCooldown(gs.sabCooldownRemain, true);
             } else if (Math.abs((GS.sabCooldownRemain || 0) - gs.sabCooldownRemain) > 5) {
-               GS.sabCooldownRemain = gs.sabCooldownRemain;
+              GS.sabCooldownRemain = gs.sabCooldownRemain;
             }
           } else {
             if (GS.sabCooldownActive) endSabotageCooldown(true);
           }
         }
-        
+
         if (gs.emergencyCooldownEndTime !== undefined && gs.emergencyCooldownEndTime > 0) {
           const remain = Math.max(0, Math.ceil((gs.emergencyCooldownEndTime - Date.now()) / 1000));
           if (remain > 0) {
             if (!GS.emergencyCooldown) {
-               startEmergencyCooldown(remain, true, gs.emergencyCooldownEndTime);
+              startEmergencyCooldown(remain, true, gs.emergencyCooldownEndTime);
             } else if (Math.abs((GS.emergencyCooldownRemain || 0) - remain) > 5) {
-               GS.emergencyCooldownRemain = remain;
-               GS.emergencyCooldownEndTime = gs.emergencyCooldownEndTime;
+              GS.emergencyCooldownRemain = remain;
+              GS.emergencyCooldownEndTime = gs.emergencyCooldownEndTime;
             }
           } else {
             if (GS.emergencyCooldown) endEmergencyCooldown(true);
@@ -4033,9 +4075,9 @@
         } else if (gs.emergencyCooldownRemain !== undefined) {
           if (gs.emergencyCooldownRemain > 0) {
             if (!GS.emergencyCooldown) {
-               startEmergencyCooldown(gs.emergencyCooldownRemain, true);
+              startEmergencyCooldown(gs.emergencyCooldownRemain, true);
             } else if (Math.abs((GS.emergencyCooldownRemain || 0) - gs.emergencyCooldownRemain) > 5) {
-               GS.emergencyCooldownRemain = gs.emergencyCooldownRemain;
+              GS.emergencyCooldownRemain = gs.emergencyCooldownRemain;
             }
           } else {
             if (GS.emergencyCooldown) endEmergencyCooldown(true);
@@ -4548,12 +4590,12 @@
       if (!p) return;
       let pts = 1;
       const isDead = c.classList.contains('eliminated');
-      
+
       if (dir > 0) {
         if (isDead) pts = 1;
         if (!p.stationTasks) p.stationTasks = {};
         p.stationTasks[stationName] = (p.stationTasks[stationName] || 0) + pts;
-        
+
         const calculatedTasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
         const diff = calculatedTasks - p.tasks;
         p.tasks = calculatedTasks;
@@ -4562,7 +4604,7 @@
         c.classList.add('tf');
         setTimeout(() => c.classList.remove('tf'), 650);
         sfxTask(); updStats(); updTT();
-        
+
         if (isDead) {
           GS.menuPendingLogs.push({
             type: 'task',
@@ -4583,7 +4625,7 @@
         const s = Math.min(score, pts);
         if (s > 0) {
           p.stationTasks[stationName] = score - s;
-          
+
           const calculatedTasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
           const diff = p.tasks - calculatedTasks;
           p.tasks = calculatedTasks;
@@ -4752,7 +4794,7 @@
           <button class="btn bo sm" style="padding: 4px 8px; min-width: 28px; height: 32px; font-weight: bold;">✕</button>
         `;
         const input = row.querySelector('input');
-        input.addEventListener('change', function() {
+        input.addEventListener('change', function () {
           const newName = this.value.trim();
           if (newName === sName) return;
           if (newName === '') {
@@ -4844,7 +4886,7 @@
       const theadTr = d('matrix-thead-tr');
       const tbody = d('matrix-tbody');
       if (!theadTr || !tbody) return;
-      
+
       theadTr.innerHTML = '<th style="padding: 10px; border-bottom: 2px solid var(--border-strong); text-align: left;">修行者</th>';
       if (!GS.stations || GS.stations.length === 0) {
         GS.stations = ['藏经阁', '大雄宝殿', '修行场'];
@@ -4866,15 +4908,15 @@
       GS.players.forEach((p, idx) => {
         const row = document.createElement('tr');
         row.style.cssText = idx % 2 === 0 ? 'background: rgba(255,255,255,0.1); border-bottom: 1px solid var(--border);' : 'background: rgba(196,150,58,0.02); border-bottom: 1px solid var(--border);';
-        
+
         const deadClass = p.element.classList.contains('eliminated') ? 'opacity: 0.65; color: var(--erc);' : '';
         let rowHtml = `<td style="padding: 8px 10px; text-align: left; font-weight: bold; ${deadClass}">${escHtml(p.name)}</td>`;
-        
+
         GS.stations.forEach(sName => {
           const score = (p.stationTasks && p.stationTasks[sName] !== undefined) ? p.stationTasks[sName] : 0;
           rowHtml += `<td style="padding: 8px 10px; ${deadClass}">${score}分</td>`;
         });
-        
+
         rowHtml += `<td style="padding: 8px 10px; font-weight: bold; color: var(--pc); ${deadClass}">${p.tasks}分</td>`;
         row.innerHTML = rowHtml;
         tbody.appendChild(row);
@@ -4918,7 +4960,7 @@
       backups.slice().reverse().forEach(bk => {
         const item = document.createElement('div');
         item.style.cssText = 'display: flex; flex-direction: column; gap: 4px; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border); background: rgba(255,255,255,0.7); font-size: 0.78rem;';
-        
+
         const ts = new Date(bk.time).toLocaleString('zh-CN');
         const pCount = bk.state.players ? bk.state.players.length : 0;
         const tasks = bk.state.totalTasks || 0;
@@ -4946,7 +4988,7 @@
               applyRemoteGameState(bk.state);
               onStateChanged();
               lg('system', '🔄', `恢复了备份游戏：「${name}」`);
-            } catch(e) {
+            } catch (e) {
               alert('恢复失败：备份数据损坏。');
             }
           });
