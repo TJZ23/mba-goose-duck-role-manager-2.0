@@ -3101,8 +3101,10 @@
         <div class="log-layout-container" style="display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 20px; align-items: start;">
           <!-- 技能使用记录 -->
           <div class="card" style="padding: 16px; margin-bottom: 0;">
-            <div class="card-accent" style="background: linear-gradient(90deg, #A855F7, #3B82F6, #EF4444);"></div>
-            <h4 style="margin-top: 0; margin-bottom: 14px; font-weight: 700; color: var(--tp); display: flex; align-items: center; gap: 6px; font-size: 0.95rem;">🔮 技能使用记录</h4>
+            <h4 style="margin-top: 0; margin-bottom: 14px; font-weight: 700; color: var(--tp); display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 0.95rem;">
+              <span>🔮 技能使用记录</span>
+              <button class="btn bo sm" id="btn-toggle-skill-vis" style="padding: 2px 6px; font-size: 0.72rem; font-weight: bold; border-radius: 6px; height: 22px;">🙈 隐藏身份</button>
+            </h4>
             <div id="skills-list-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 280px; overflow-y: auto; padding-right: 2px;">
               <div style="color: var(--ts); text-align: center; font-size: 0.84rem; padding: 20px 0;">
                 暂无相关角色玩家<br>
@@ -3903,6 +3905,7 @@
         logHTML: d('ev-log').innerHTML,
         pigReveal: GS.pigReveal, dodoReveal: GS.dodoReveal,
         rolesVis: GS.rolesVis,
+        skillRolesVis: GS.skillRolesVis !== undefined ? GS.skillRolesVis : true,
         emergencyCooldownRemain: GS.emergencyCooldownRemain || 0,
         sabCooldownRemain: GS.sabCooldownRemain || 0,
         emergencyCooldownEndTime: GS.emergencyCooldownEndTime || 0,
@@ -3989,6 +3992,7 @@
         if (gs.dodoReveal !== undefined) { GS.dodoReveal = gs.dodoReveal; d('sl-dodo').textContent = gs.dodoReveal ? '痴迷鸽 🦤' : '秘密 🔒'; }
         if (gs.rolesVis !== undefined) { if (gs.rolesVis !== GS.rolesVis) { gs.rolesVis ? showAllRoles() : hideAllRoles(); } }
         if (gs.logHTML) d('ev-log').innerHTML = gs.logHTML;
+        if (gs.skillRolesVis !== undefined) GS.skillRolesVis = gs.skillRolesVis;
         
         if (gs.sabCooldownEndTime !== undefined && gs.sabCooldownEndTime > 0) {
           const remain = Math.max(0, Math.ceil((gs.sabCooldownEndTime - Date.now()) / 1000));
@@ -4078,7 +4082,8 @@
       lastOnlineCount: 0,
       stations: ['藏经阁', '大雄宝殿', '修行场'],
       notifications: [],
-      menuScoreChanged: false
+      menuScoreChanged: false,
+      skillRolesVis: true
     };
 
     function d(id) { return document.getElementById(id) }
@@ -4266,68 +4271,129 @@
       if (!container) return;
       container.innerHTML = '';
 
+      const btnToggle = d('btn-toggle-skill-vis');
+      if (btnToggle) {
+        btnToggle.textContent = GS.skillRolesVis ? '🙈 隐藏身份' : '👁️ 显示身份';
+      }
+
       const detPlayers = GS.players.filter(p => p.role === 'detective' || p.element.dataset.role === 'detective');
       const sherPlayers = GS.players.filter(p => p.role === 'sheriff' || p.element.dataset.role === 'sheriff');
       const duckPlayers = GS.players.filter(p => p.role === 'duck' || p.element.dataset.role === 'duck');
 
-      const targetRoles = [
-        { label: '法师鹅', icon: '🔍', color: '#A855F7', players: detPlayers },
-        { label: '护法鹅', icon: '👮', color: '#3B82F6', players: sherPlayers },
-        { label: '魔罗鸭', icon: '🦆', color: '#EF4444', players: duckPlayers }
-      ];
-
       let totalCount = 0;
-      targetRoles.forEach(group => {
-        if (group.players.length === 0) return;
-        totalCount += group.players.length;
 
-        const grpEl = document.createElement('div');
-        grpEl.style.marginBottom = '6px';
-        grpEl.innerHTML = `
-          <div style="font-size: 0.8rem; font-weight: bold; color: var(--ts); margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
-            <span>${group.icon}</span>
-            <span>${group.label} (${group.players.length}人)</span>
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 6px;"></div>
-        `;
-        const listEl = grpEl.querySelector('div:last-child');
+      if (GS.skillRolesVis) {
+        const targetRoles = [
+          { label: '法师鹅', icon: '🔍', color: '#A855F7', players: detPlayers },
+          { label: '护法鹅', icon: '👮', color: '#3B82F6', players: sherPlayers },
+          { label: '魔罗鸭', icon: '🦆', color: '#EF4444', players: duckPlayers }
+        ];
 
-        group.players.forEach(p => {
-          const row = document.createElement('div');
-          row.className = 'skill-counter-row';
-          row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.4); padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border);';
-          row.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-              <span style="font-size: 0.82rem; font-weight: bold; color: var(--tp);">${escHtml(p.name)}</span>
-              <span style="font-size: 0.72rem; color: var(--ts); background: rgba(196, 150, 58, 0.1); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px;">
-                <span>${group.icon}</span>
-                <span>${group.label}</span>
-              </span>
-              ${p.element.classList.contains('eliminated') ? '<span style="font-size: 0.72rem; color: var(--erc); opacity: 0.8;">(已出局)</span>' : ''}
+        targetRoles.forEach(group => {
+          if (group.players.length === 0) return;
+          totalCount += group.players.length;
+
+          const grpEl = document.createElement('div');
+          grpEl.style.marginBottom = '8px';
+          grpEl.innerHTML = `
+            <div style="font-size: 0.8rem; font-weight: bold; color: var(--ts); margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+              <span>${group.icon}</span>
+              <span>${group.label} (${group.players.length}人)</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <button class="btn bo sm dec-p-skill" data-id="${p.id}" style="padding: 2px 8px; font-size: 0.8rem; min-width: 28px; height: 26px;">-</button>
-              <span class="p-skill-val" style="font-family: monospace; font-size: 1.05rem; font-weight: bold; min-width: 24px; text-align: center;">${p.skillCount || 0}</span>
-              <button class="btn bp sm inc-p-skill" data-id="${p.id}" style="padding: 2px 8px; font-size: 0.8rem; min-width: 28px; height: 26px;">+</button>
-            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;"></div>
           `;
+          const listEl = grpEl.querySelector('div:last-child');
 
-          row.querySelector('.dec-p-skill').onclick = () => {
-            p.skillCount = Math.max(0, (p.skillCount || 0) - 1);
-            row.querySelector('.p-skill-val').textContent = p.skillCount;
-            onStateChanged();
-          };
-          row.querySelector('.inc-p-skill').onclick = () => {
-            p.skillCount = (p.skillCount || 0) + 1;
-            row.querySelector('.p-skill-val').textContent = p.skillCount;
-            onStateChanged();
-          };
+          group.players.forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'skill-counter-row';
+            row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.4); padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border);';
+            row.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="font-size: 0.82rem; font-weight: bold; color: var(--tp);">${escHtml(p.name)}</span>
+                <span style="font-size: 0.72rem; color: var(--ts); background: rgba(196, 150, 58, 0.1); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px;">
+                  <span>${group.icon}</span>
+                  <span>${group.label}</span>
+                </span>
+                ${p.element.classList.contains('eliminated') ? '<span style="font-size: 0.72rem; color: var(--erc); opacity: 0.8;">(已出局)</span>' : ''}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn bo sm dec-p-skill" data-id="${p.id}" style="padding: 2px 8px; font-size: 0.8rem; min-width: 28px; height: 26px;">-</button>
+                <span class="p-skill-val" style="font-family: monospace; font-size: 1.05rem; font-weight: bold; min-width: 24px; text-align: center;">${p.skillCount || 0}</span>
+                <button class="btn bp sm inc-p-skill" data-id="${p.id}" style="padding: 2px 8px; font-size: 0.8rem; min-width: 28px; height: 26px;">+</button>
+              </div>
+            `;
 
-          listEl.appendChild(row);
+            row.querySelector('.dec-p-skill').onclick = () => {
+              p.skillCount = Math.max(0, (p.skillCount || 0) - 1);
+              row.querySelector('.p-skill-val').textContent = p.skillCount;
+              onStateChanged();
+            };
+            row.querySelector('.inc-p-skill').onclick = () => {
+              p.skillCount = (p.skillCount || 0) + 1;
+              row.querySelector('.p-skill-val').textContent = p.skillCount;
+              onStateChanged();
+            };
+
+            listEl.appendChild(row);
+          });
+
+          container.appendChild(grpEl);
         });
+      } else {
+        const allPlayers = [...detPlayers, ...sherPlayers, ...duckPlayers];
+        allPlayers.sort((a, b) => a.id - b.id);
+        totalCount = allPlayers.length;
 
-        container.appendChild(grpEl);
-      });
+        if (totalCount > 0) {
+          const grpEl = document.createElement('div');
+          grpEl.style.marginBottom = '8px';
+          grpEl.innerHTML = `
+            <div style="font-size: 0.8rem; font-weight: bold; color: var(--ts); margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+              <span>👤</span>
+              <span>技能修行者名录 (${totalCount}人)</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;"></div>
+          `;
+          const listEl = grpEl.querySelector('div:last-child');
+
+          allPlayers.forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'skill-counter-row';
+            row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.4); padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border);';
+            row.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="font-size: 0.82rem; font-weight: bold; color: var(--tp);">${escHtml(p.name)}</span>
+                <span style="font-size: 0.72rem; color: var(--ts); background: rgba(0, 0, 0, 0.05); padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px;">
+                  <span>🔒</span>
+                  <span>身份已隐藏</span>
+                </span>
+                ${p.element.classList.contains('eliminated') ? '<span style="font-size: 0.72rem; color: var(--erc); opacity: 0.8;">(已出局)</span>' : ''}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn bo sm dec-p-skill" data-id="${p.id}" style="padding: 2px 8px; font-size: 0.8rem; min-width: 28px; height: 26px;">-</button>
+                <span class="p-skill-val" style="font-family: monospace; font-size: 1.05rem; font-weight: bold; min-width: 24px; text-align: center;">${p.skillCount || 0}</span>
+                <button class="btn bp sm inc-p-skill" data-id="${p.id}" style="padding: 2px 8px; font-size: 0.8rem; min-width: 28px; height: 26px;">+</button>
+              </div>
+            `;
+
+            row.querySelector('.dec-p-skill').onclick = () => {
+              p.skillCount = Math.max(0, (p.skillCount || 0) - 1);
+              row.querySelector('.p-skill-val').textContent = p.skillCount;
+              onStateChanged();
+            };
+            row.querySelector('.inc-p-skill').onclick = () => {
+              p.skillCount = (p.skillCount || 0) + 1;
+              row.querySelector('.p-skill-val').textContent = p.skillCount;
+              onStateChanged();
+            };
+
+            listEl.appendChild(row);
+          });
+
+          container.appendChild(grpEl);
+        }
+      }
 
       if (totalCount === 0) {
         container.innerHTML = `
@@ -4949,7 +5015,7 @@
         lg('system', '🧹', '清空了所有推荐通知');
       });
     });
-    function doNewGame() { if (GS.sabTimer) { clearInterval(GS.sabTimer); GS.sabTimer = null } stopSabAlert(); d('sab-banner').classList.remove('active'); d('meeting-banner').style.display = 'none'; stopDisc(); stopMeetingOverAlert(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false; d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); stopBG(); GS.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); buildTeamConfigUI();['cnt-goose', 'cnt-det', 'cnt-sher', 'cnt-duck', 'cnt-pig', 'cnt-dodo'].forEach(id => { const el = d(id); if (el) el.value = 0 }); document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; GS.meetRound = 1; GS.sabSuccessCount = 0; GS.rolesVis = false; GS.pigReveal = false; GS.dodoReveal = false; GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first'; GS.taskTarget = 80; GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; GS.sabPunishKillList = []; endSabotageCooldown(true); endEmergencyCooldown(true); d('m-round-input').value = 1; d('tgt-input').value = 80; si('tgt-label', 80); si('wc-task', 80); d('sl-pig').textContent = '秘密 🔒'; d('sl-dodo').textContent = '秘密 🔒'; d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show'); d('ev-log').innerHTML = ''; GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); updStats(); updTT(); refCands(); refPickers(); d('step2-btn').disabled = true; d('step3-btn').disabled = true; goToStep(1); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300); GS.lastOnlineCount = 1; d('online-count').textContent = '1'; const dot = d('bell-dot'); if (dot) { dot.style.display = 'none'; dot.classList.remove('dot-flash-3'); } GS.notifications = []; renderNotifications(); const countEl = d('notify-count'); if (countEl) countEl.textContent = '0'; const ndot = d('notify-dot'); if (ndot) { ndot.style.display = 'none'; ndot.classList.remove('dot-flash-3'); } onStateChanged(); lg('system', '🌅', '新游戏开始！所有进度已清空。') }
+    function doNewGame() { if (GS.sabTimer) { clearInterval(GS.sabTimer); GS.sabTimer = null } stopSabAlert(); d('sab-banner').classList.remove('active'); d('meeting-banner').style.display = 'none'; stopDisc(); stopMeetingOverAlert(); GS.meetingActive = false; GS.discPaused = false; GS.meetingBGMRunning = false; d('end-meeting').style.display = 'none'; d('new-meeting').style.display = 'inline-flex'; d('disc-pause').textContent = '⏸ 暂停'; setVotingLocked(true); stopBG(); GS.teams = JSON.parse(JSON.stringify(DEFAULT_TEAMS)); buildTeamConfigUI();['cnt-goose', 'cnt-det', 'cnt-sher', 'cnt-duck', 'cnt-pig', 'cnt-dodo'].forEach(id => { const el = d(id); if (el) el.value = 0 }); document.getElementById('teams-container').innerHTML = ''; GS.players = []; GS.totalTasks = 0; GS.meetRound = 1; GS.sabSuccessCount = 0; GS.rolesVis = false; GS.pigReveal = false; GS.dodoReveal = false; GS.pkMode = false; GS.pkPlayers = []; GS.pkRound = 0; GS.pkContext = 'first'; GS.taskTarget = 80; GS.firstElimDone = false; GS.meetingElimCount = 0; GS.firstElimPlayer = null; GS.sabPunishKillList = []; endSabotageCooldown(true); endEmergencyCooldown(true); d('m-round-input').value = 1; d('tgt-input').value = 80; si('tgt-label', 80); si('wc-task', 80); d('sl-pig').textContent = '秘密 🔒'; d('sl-dodo').textContent = '秘密 🔒'; d('vote-rb').classList.remove('show'); d('pk-section').classList.remove('show'); d('ev-log').innerHTML = ''; GS.discSec = +d('disc-min').value * 60 || 180; renderDisc(); updStats(); updTT(); refCands(); refPickers(); d('step2-btn').disabled = true; d('step3-btn').disabled = true; goToStep(1); if (!GS.muted && !GS.bgmStopped) setTimeout(() => startBG(), 300); GS.lastOnlineCount = 1; d('online-count').textContent = '1'; const dot = d('bell-dot'); if (dot) { dot.style.display = 'none'; dot.classList.remove('dot-flash-3'); } GS.notifications = []; renderNotifications(); const countEl = d('notify-count'); if (countEl) countEl.textContent = '0'; const ndot = d('notify-dot'); if (ndot) { ndot.style.display = 'none'; ndot.classList.remove('dot-flash-3'); } onStateChanged(); GS.skillRolesVis = true; lg('system', '🌅', '新游戏开始！所有进度已清空。') }
 
     // END GAME
     d('end-game-btn').addEventListener('click', () => showMod('mod-eg-confirm'));
@@ -4972,6 +5038,18 @@
       renderSkillCounters();
       onStateChanged();
     }));
+
+    // SKILL COUNTERS TOGGLE VISIBILITY
+    d('btn-toggle-skill-vis').addEventListener('click', () => {
+      const isVis = GS.skillRolesVis;
+      const msg = isVis ? '确定要隐藏技能记录中的角色身份吗？' : '确定要显示技能记录中的角色身份吗？';
+      showC1(msg, ok => {
+        if (!ok) return;
+        GS.skillRolesVis = !isVis;
+        renderSkillCounters();
+        onStateChanged();
+      });
+    });
 
     // ROLES MODAL
     document.querySelectorAll('.rsb').forEach(btn => btn.addEventListener('click', () => { const c = GS.curCard; if (!c) return; setRole(c, btn.dataset.role); updStats(); refCands(); refPickers(); hideMod('mod-role'); onStateChanged(); GS.curCard = null }));
