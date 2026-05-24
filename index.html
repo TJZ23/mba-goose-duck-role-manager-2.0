@@ -4744,31 +4744,11 @@
       const total = GS.totalTasks;
       const amt = Math.floor(total * pct / 100);
       if (!amt) return;
-      let rem = amt;
-      [...GS.players].filter(p => p.tasks > 0).sort((a, b) => b.tasks - a.tasks).forEach(p => {
-        if (!rem) return;
-        const s = Math.min(p.tasks, rem);
-        if (!p.stationTasks) p.stationTasks = {};
-        let pRem = s;
-        for (const sName of GS.stations) {
-          const score = p.stationTasks[sName] || 0;
-          if (score > 0) {
-            const ded = Math.min(score, pRem);
-            p.stationTasks[sName] = score - ded;
-            pRem -= ded;
-            if (pRem <= 0) break;
-          }
-        }
-        p.tasks = Object.values(p.stationTasks).reduce((sum, v) => sum + v, 0);
-        rem -= s;
-        p.element.querySelector('.tc').textContent = p.tasks;
-      });
+      // 只从全场总进度扣除，不影响修行者 × 站点 积分矩阵（矩阵记录实际所得，不受惩罚扣减）
       GS.totalTasks = Math.max(0, GS.totalTasks - amt);
       sfxDeduct();
       updStats();
-      updTT();
-      renderStationMatrix();
-      lg('deduct', '⬇️', `扣除${pct}%(-${amt}个)，已按站点分配扣除，剩${GS.totalTasks}`);
+      lg('deduct', '⬇️', `扣除${pct}%（-${amt}个），全场进度剩 ${GS.totalTasks}（站点积分矩阵不受影响）`);
       onStateChanged();
     }
     function rkill(n, reason) { const killable = GS.players.filter(p => !p.element.classList.contains('eliminated') && GR.includes(p.element.dataset.role)); const kill = killable.sort(() => Math.random() - .5).slice(0, Math.min(n, killable.length)); if (!kill.length) { lg('system', '⚠️', '没有可淘汰的存活鹅'); return [] } kill.forEach(p => elimP(p.element)); updStats(); refCands(); refPickers(); lg('sabotage', '☠️', `${reason}！${kill.map(p => p.name).join('、')}倒下！`); onStateChanged(); return kill }
@@ -4980,6 +4960,21 @@
         row.innerHTML = rowHtml;
         tbody.appendChild(row);
       });
+
+      // Footer row: column totals + distinguish raw matrix total vs deducted progress total
+      const totalRow = document.createElement('tr');
+      totalRow.style.cssText = 'background: rgba(196,150,58,0.12); border-top: 2px solid var(--pc); font-weight: bold;';
+      let totalHtml = `<td style="padding: 8px 10px; text-align: left; color: var(--pc);">站点小计</td>`;
+      GS.stations.forEach(sName => {
+        const colSum = GS.players.reduce((sum, p) => sum + ((p.stationTasks && p.stationTasks[sName]) || 0), 0);
+        totalHtml += `<td style="padding: 8px 10px; color: var(--pc);">${colSum}分</td>`;
+      });
+      const rawTotal = GS.players.reduce((sum, p) => sum + (p.tasks || 0), 0);
+      const deducted = rawTotal - GS.totalTasks;
+      const deductedLabel = deducted > 0 ? `<br><span style="font-size:0.78rem;color:var(--erc);font-weight:normal;">（已扣 ${deducted}）</span>` : '';
+      totalHtml += `<td style="padding: 8px 10px; color: var(--pc);">${rawTotal}分${deductedLabel}<br><span style="font-size:0.78rem;color:var(--ts);font-weight:normal;">进度：${GS.totalTasks}</span></td>`;
+      totalRow.innerHTML = totalHtml;
+      tbody.appendChild(totalRow);
     }
 
     d('add-station-btn').addEventListener('click', addStation);
