@@ -3510,6 +3510,31 @@
       d('bell-dot').style.display = 'none';
       d('bell-dot').classList.remove('dot-flash-3');
 
+      // Helper: merge locally-saved auto-backups (saved before page refresh) into shared room backup list
+      const mergePendingAutoBackups = () => {
+        setTimeout(() => {
+          try {
+            const pendingKey = 'gduck_pending_auto_backups_' + roomId;
+            const pendingRaw = localStorage.getItem(pendingKey);
+            if (!pendingRaw) return;
+            const pending = JSON.parse(pendingRaw);
+            if (!pending.length) return;
+            localStorage.removeItem(pendingKey);
+            let current = [];
+            try { current = GS.backups && GS.backups.length > 0 ? GS.backups : JSON.parse(localStorage.getItem('gduck_backups_list_' + roomId) || '[]'); } catch(e) {}
+            const existingIds = new Set(current.map(b => b.id));
+            const fresh = pending.filter(b => !existingIds.has(b.id));
+            if (fresh.length > 0) {
+              const merged = [...fresh, ...current].slice(0, 30);
+              GS.backups = merged;
+              try { localStorage.setItem('gduck_backups_list_' + roomId, JSON.stringify(merged)); } catch(e) {}
+              onStateChanged(); // Push updated backup list to all players in room
+              lg('system', '💾', `刷新前游戏已自动备份（${fresh.length}条）`);
+            }
+          } catch(e) {}
+        }, 800); // Small delay to ensure state is fully applied first
+      };
+
       // 如果服务器没有状态且是自己的房间，尝试恢复本地保存的游戏
       if (!state && isInMyRoom) {
         const savedGame = loadGameFromLocalStorage(roomId);
@@ -3523,12 +3548,14 @@
               clearSavedGame(roomId);
               lg('system', '🗑️', '已清除保存的游戏');
             }
+            mergePendingAutoBackups();
           });
           return;
         }
       }
 
       if (state) applyRemoteGameState(state);
+      mergePendingAutoBackups();
     });
 
     // 他人修改后推来的状态更新
@@ -3952,6 +3979,7 @@
         sabCooldownRemain: GS.sabCooldownRemain || 0,
         emergencyCooldownEndTime: GS.emergencyCooldownEndTime || 0,
         sabCooldownEndTime: GS.sabCooldownEndTime || 0,
+        backups: GS.backups || [],
       };
     }
 
@@ -4087,6 +4115,36 @@
         // Sync meeting UI buttons
         if (gs.meetingActive) { d('new-meeting').style.display = 'none'; d('end-meeting').style.display = 'inline-flex'; }
         else { d('new-meeting').style.display = ''; d('end-meeting').style.display = 'none'; }
+
+        // Sync backups list from server state to all clients in room
+        if (gs.backups && Array.isArray(gs.backups)) {
+          GS.backups = gs.backups;
+          try { localStorage.setItem('gduck_backups_list_' + currentRoomId, JSON.stringify(gs.backups)); } catch(e) {}
+        }
+
+        // Restart discussion timer if it was running when page refreshed / server reconnected
+        if (gs.discRun && gs.meetingActive && !GS.discTimer && GS.discSec > 0) {
+          GS.discRun = true;
+          GS.discTimer = setInterval(() => {
+            GS.discSec--;
+            renderDisc();
+            if (GS.discSec <= 0) { stopDisc(); startMeetingOverAlert(); lg('system', '⏰', '讨论时间结束！'); }
+          }, 1000);
+        }
+
+        // Restart sabotage timer if it was running when page refreshed / server reconnected
+        if (gs.sabTimerActive && gs.sabSec > 0 && !GS.sabTimer) {
+          GS.sabSec = gs.sabSec;
+          stopBG();
+          startSabAlert();
+          GS.sabTimer = setInterval(() => {
+            GS.sabSec--;
+            updSabT();
+            onStateChanged();
+            if (GS.sabSec <= 0) { clearInterval(GS.sabTimer); GS.sabTimer = null; stopSabAlert(); autoSabFail(); }
+          }, 1000);
+        }
+
         updStats(); updTT(); refCands(); refPickers(); updJailBoard();
       } finally {
         _applyingRemote = false;
@@ -4125,7 +4183,8 @@
       stations: ['藏经阁', '大雄宝殿', '修行场'],
       notifications: [],
       menuScoreChanged: false,
-      skillRolesVis: true
+      skillRolesVis: true,
+      backups: []
     };
 
     function d(id) { return document.getElementById(id) }
@@ -4935,6 +4994,8 @@
 
     // NEW GAME BACKUPS MANAGEMENT
     function getBackupsList() {
+      // Prefer in-memory backups synced from server (ensures room-wide visibility)
+      if (GS.backups && GS.backups.length > 0) return GS.backups;
       const data = localStorage.getItem('gduck_backups_list_' + currentRoomId);
       if (!data) return [];
       try {
@@ -4945,7 +5006,9 @@
     }
 
     function saveBackupsList(list) {
-      localStorage.setItem('gduck_backups_list_' + currentRoomId, JSON.stringify(list));
+      GS.backups = list;
+      try { localStorage.setItem('gduck_backups_list_' + currentRoomId, JSON.stringify(list)); } catch(e) {}
+      onStateChanged(); // Broadcast updated backup list to all players in room
     }
 
     function renderBackupsList() {
@@ -4985,7 +5048,9 @@
             if (!ok) return;
             try {
               hideMod('mod-newgame');
+              const savedBackups = [...(GS.backups || [])]; // Preserve backup list before restoring state
               applyRemoteGameState(bk.state);
+              GS.backups = savedBackups; // Re-apply backup list (restore must not erase other backups)
               onStateChanged();
               lg('system', '🔄', `恢复了备份游戏：「${name}」`);
             } catch (e) {
@@ -5117,6 +5182,7 @@
         renderStationConfig();
         renderStationMatrix();
       }
+      try { sessionStorage.setItem('gduck_active_tab', id); } catch(e) {}
     }
 
     // FIREWORKS
@@ -5200,6 +5266,35 @@
       // First interaction unlocks audio
       const once = () => { if (!GS.audioCtx && !GS.muted && !GS.bgmStopped) startBG(); document.body.removeEventListener('click', once); };
       document.body.addEventListener('click', once);
+
+      // Restore the last active tab after page refresh
+      try {
+        const savedTab = sessionStorage.getItem('gduck_active_tab');
+        if (savedTab) activateTab(savedTab);
+      } catch(e) {}
+
+      // Auto-backup game state just before page unload / browser refresh
+      window.addEventListener('beforeunload', () => {
+        if (!hasGameContent()) return;
+        try {
+          const gs = exportGameState();
+          const now = new Date().toLocaleTimeString('zh-CN');
+          const autoBackup = {
+            id: 'auto_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            time: Date.now(),
+            name: `自动备份（刷新于 ${now}）`,
+            state: gs,
+            isAuto: true
+          };
+          const pendingKey = 'gduck_pending_auto_backups_' + currentRoomId;
+          let pending = [];
+          try { pending = JSON.parse(localStorage.getItem(pendingKey) || '[]'); } catch(e2) {}
+          // Keep at most 2 previous auto-backups + this new one = max 3 auto-backups
+          pending = pending.filter(b => b.isAuto).slice(-2);
+          pending.push(autoBackup);
+          localStorage.setItem(pendingKey, JSON.stringify(pending));
+        } catch(e) {}
+      });
 
       lg('system', '🏮', `控制台启动 · 我的房间号：${myRoomId}`);
     });
